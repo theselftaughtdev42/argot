@@ -1,0 +1,6 @@
+# node_modules is shared between macOS and the Linux Docker sandbox, so install
+# native bindings (rolldown, lightningcss) for both rather than only the host.
+supportedArchitectures:
+  os: [darwin, linux]
+  cpu: [arm64, x64]
+  libc: [glibc, musl]

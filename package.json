@@ -1,0 +1,20 @@
+{
+  "name": "argot",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "tools for learning vim",
+  "packageManager": "pnpm@12.8.1",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vite": "^8.3.2",
+    "vitest": "^5.0.3"
+  }
+}
