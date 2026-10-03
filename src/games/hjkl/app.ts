@@ -1,5 +1,5 @@
 import { createGame, move, type Direction, type GameState } from "./engine";
-import { createInputHandler } from "./input";
+import { directionFor } from "./input";
 import { Timer } from "./timer";
 import { getBestTime, isNewBest as wouldBeNewBest, saveBestTimeIfBetter } from "./storage";
 import { renderLanding, renderDrill, renderResults } from "./renderer";
@@ -15,15 +15,8 @@ export function mountHjklGame(
   let screen: Screen = "landing";
   let finalTimeMs = 0;
   let isNewBest = false;
-  let removeInputHandler: (() => void) | null = null;
   let animationFrame = 0;
-  let keysEnabled = true;
   const timer = new Timer();
-
-  function teardownInput(): void {
-    removeInputHandler?.();
-    removeInputHandler = null;
-  }
 
   function tick(): void {
     if (screen !== "drill") return;
@@ -32,13 +25,11 @@ export function mountHjklGame(
   }
 
   function handleMove(direction: Direction): void {
-    if (screen !== "drill" || !keysEnabled) return;
     timer.start();
     state = move(state, direction);
     if (state.status === "complete") {
       timer.stop();
       cancelAnimationFrame(animationFrame);
-      teardownInput();
       finalTimeMs = timer.elapsedMs();
       isNewBest = wouldBeNewBest(finalTimeMs);
       screen = "results";
@@ -52,39 +43,32 @@ export function mountHjklGame(
     timer.reset();
     screen = "drill";
     onScreenChange("play");
-    teardownInput();
-    removeInputHandler = createInputHandler(handleMove);
     renderDrill(root, state, timer.elapsedMs());
     animationFrame = requestAnimationFrame(tick);
-  }
-
-  function handleLandingKeydown(event: KeyboardEvent): void {
-    if (event.repeat || event.ctrlKey || event.metaKey || event.altKey) return;
-    if (event.key !== "Enter" || !keysEnabled) return;
-    window.removeEventListener("keydown", handleLandingKeydown);
-    startDrill();
   }
 
   function showLanding(): void {
     screen = "landing";
     onScreenChange("splash");
     renderLanding(root, getBestTime());
-    window.addEventListener("keydown", handleLandingKeydown);
   }
 
   showLanding();
 
   return {
-    setKeysEnabled(enabled) {
-      keysEnabled = enabled;
+    handleKey(event) {
+      if (screen === "landing" && event.key === "Enter" && !event.repeat) {
+        startDrill();
+      } else if (screen === "drill") {
+        const direction = directionFor(event);
+        if (direction) handleMove(direction);
+      }
     },
     save() {
       if (screen === "results") saveBestTimeIfBetter(finalTimeMs);
     },
     destroy() {
       cancelAnimationFrame(animationFrame);
-      teardownInput();
-      window.removeEventListener("keydown", handleLandingKeydown);
     },
   };
 }

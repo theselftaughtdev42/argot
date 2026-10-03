@@ -1,4 +1,5 @@
 import { games, type GameScreen, type GameSession } from "./games/registry";
+import { commands, type Shell } from "./shell/commands";
 import { renderGameBar, renderHome, type ShellOutput } from "./shell/renderer";
 
 type RunningGame = {
@@ -49,28 +50,35 @@ export function mountApp(root: HTMLElement): void {
     renderHome(root, input, output);
   }
 
-  function runCommand(command: string): void {
-    const [name, arg] = command.split(/\s+/);
+  const shell: Shell = {
+    print(text) {
+      output = { kind: "output", text };
+    },
+    error(text) {
+      output = { kind: "error", text };
+    },
+    launchGame,
+  };
+
+  function runCommand(line: string): void {
+    const [name, ...args] = line.split(/\s+/);
     if (!name) {
       output = null;
-    } else if (name === "ls") {
-      output = { kind: "output", text: [...games.keys()].join("  ") };
-    } else if (name === "vim" && !arg) {
-      output = { kind: "error", text: "vim: missing game name" };
-    } else if (name === "vim" && games.has(arg)) {
-      launchGame(arg);
-    } else if (name === "vim") {
-      output = { kind: "error", text: `vim: no such game: ${arg}` };
-    } else {
-      output = { kind: "error", text: `${name}: command not found` };
+      return;
     }
+    const command = commands.get(name);
+    if (command) command.run(args, shell);
+    else shell.error(`${name}: command not found`);
   }
 
   function handleGameKeydown(game: RunningGame, event: KeyboardEvent): void {
     if (game.command === null) {
-      if (event.key !== "Escape" || game.screen === "results") return;
+      if (event.key !== "Escape") {
+        game.session?.handleKey(event);
+        return;
+      }
+      if (game.screen === "results") return;
       game.command = "";
-      game.session?.setKeysEnabled(false);
     } else if (event.key === "Escape" && game.screen === "results") {
       // Results has no game to go back to, so Esc only clears the line.
       game.command = "";
@@ -78,7 +86,6 @@ export function mountApp(root: HTMLElement): void {
     } else if (event.key === "Escape") {
       game.command = null;
       game.error = null;
-      game.session?.setKeysEnabled(true);
     } else if (event.key === "Enter") {
       if (game.command === "") return;
       if (game.command === ":q!") {

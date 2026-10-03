@@ -1,31 +1,12 @@
 import type { Direction } from "./engine";
 
-const KEY_TO_DIRECTION: Record<string, Direction> = {
-  h: "h",
-  j: "j",
-  k: "k",
-  l: "l",
-};
+const DIRECTIONS: ReadonlySet<string> = new Set<Direction>(["h", "j", "k", "l"]);
 
 /**
- * Listens for hjkl keydowns and reports accepted moves. Ignores key-repeat
- * events (holding a key down), hjkl pressed with a modifier (so browser
- * shortcuts like Ctrl/Cmd+L still work), and every key that isn't h/j/k/l,
- * including the arrow keys.
+ * The move a keydown asks for, if any. Ignores key-repeat events (holding a
+ * key down) and every key that isn't h/j/k/l, including the arrow keys.
  */
-export function createInputHandler(
-  onMove: (direction: Direction) => void,
-  target: EventTarget = window,
-): () => void {
-  function handleKeydown(event: KeyboardEvent): void {
-    if (event.repeat) return;
-    if (event.ctrlKey || event.metaKey || event.altKey) return;
-    const direction = KEY_TO_DIRECTION[event.key];
-    if (!direction) return;
-    onMove(direction);
-  }
-
-  const listener = handleKeydown as EventListener;
-  target.addEventListener("keydown", listener);
-  return () => target.removeEventListener("keydown", listener);
+export function directionFor(event: Pick<KeyboardEvent, "key" | "repeat">): Direction | null {
+  if (event.repeat) return null;
+  return DIRECTIONS.has(event.key) ? (event.key as Direction) : null;
 }
