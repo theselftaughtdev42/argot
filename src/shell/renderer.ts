@@ -46,34 +46,48 @@ export function renderHome(root: HTMLElement, { input, last, compact }: HomeStat
   `;
 }
 
-const GAME_HINTS: Partial<Record<GameScreen, string>> = {
-  play: "press Esc for commands",
-};
+/**
+ * The shell's frame around a running game, mounted once at launch: the stage
+ * the game owns, the statusline, and the command line. Returns the stage and
+ * the command line for the shell to render into.
+ */
+export function renderGameFrame(root: HTMLElement, name: string): { stage: HTMLElement; cmdline: HTMLElement } {
+  // TMP marks the mode as a placeholder until argot has real modes; Esc doesn't change it.
+  root.innerHTML = `
+    <main class="ag-game">
+      <div class="ag-game__stage"></div>
+      <div class="ag-statusline">
+        <div class="ag-statusline__left"><span class="ag-mode">TMP</span><span class="statusline-game">${escapeHtml(name)}</span></div>
+      </div>
+      <div class="ag-cmdline"></div>
+    </main>
+  `;
+  return {
+    stage: root.querySelector<HTMLElement>(".ag-game__stage")!,
+    cmdline: root.querySelector<HTMLElement>(".ag-cmdline")!,
+  };
+}
 
 /**
- * The shell's lines under a running game: the command line when it's open
- * (`command` is null while closed), then the hint, or an error in its place.
+ * The command line under a running game: what's typed, with the cursor, while
+ * it's open (`command` is null while closed), and the hint, or an error in its place.
  */
-export function renderGameBar(
-  bar: HTMLElement,
+export function renderCommandLine(
+  cmdline: HTMLElement,
   screen: GameScreen,
   command: string | null,
   error: string | null,
 ): void {
   const hint =
     screen === "results"
-      ? ":wq save &amp; quit · :q! quit without saving"
+      ? `<span class="ag-key">:wq</span> save &amp; quit · <span class="ag-key">:q!</span> quit without saving`
       : command !== null
-        ? "type :q! to quit"
-        : GAME_HINTS[screen];
-  bar.innerHTML = `
-    ${command !== null ? `<p class="command-line">${escapeHtml(command)}</p>` : ""}
-    ${
-      error
-        ? `<p class="error">${escapeHtml(error)}</p>`
-        : hint
-          ? `<p class="hint">${hint}</p>`
-          : ""
-    }
+        ? `type <span class="ag-key">:q!</span> to quit`
+        : `<span class="ag-key">Esc</span> then <span class="ag-key">:q!</span> back to home without saving`;
+  cmdline.innerHTML = `
+    <span class="ag-line">${
+      command !== null ? `<span class="cmdline-input">${escapeHtml(command)}</span><span class="ag-cursor"></span>` : ""
+    }</span>
+    ${error ? `<span class="ag-error">${escapeHtml(error)}</span>` : `<span class="ag-muted cmdline-hint">${hint}</span>`}
   `;
 }

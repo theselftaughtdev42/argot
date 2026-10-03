@@ -146,6 +146,8 @@ html, body {
   text-shadow: none;
 }
 .ag-statusline > * { padding: 2px 12px; }
+.ag-statusline > .ag-statusline__left { display: flex; padding: 0; }
+.ag-statusline__left > * { padding: 2px 12px; }
 .ag-mode {
   background: var(--ag-mode-bg);
   color: var(--ag-mode-fg);
@@ -160,6 +162,13 @@ html, body {
   padding: 6px 12px 12px;
   font-size: 18px;
   min-height: 1.7em;
+}
+
+/* while the command line is open, the game steps back so attention moves to it */
+.ag-game__stage { transition: opacity 0.15s, filter 0.15s; }
+.game-greyed {
+  opacity: 0.35;
+  filter: grayscale(1);
 }
 
 /* ---------- current screens ----------
@@ -179,12 +188,6 @@ body {
 
 #app {
   width: 100%;
-}
-
-.game-frame {
-  max-width: 640px;
-  margin: 0 auto;
-  padding: 2rem;
 }
 
 .screen {
@@ -231,49 +234,6 @@ kbd {
 .best-time strong,
 .new-best {
   color: var(--ag-highlight);
-}
-
-.command-line::after {
-  content: "";
-  display: inline-block;
-  width: 0.6em;
-  height: 1.1em;
-  vertical-align: text-bottom;
-  background: var(--ag-cursor);
-}
-
-.error {
-  color: var(--ag-error);
-}
-
-.game {
-  transition: opacity 0.15s, filter 0.15s;
-}
-
-.game-greyed {
-  opacity: 0.35;
-  filter: grayscale(1);
-}
-
-.shell-bar {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  margin-top: 1.5rem;
-  min-height: 2.5rem;
-  text-align: left;
-}
-
-.shell-bar p {
-  margin: 0;
-}
-
-.shell-bar .error {
-  font-size: 0.875rem;
-}
-
-.command-line {
-  white-space: pre;
 }
 
 .hint {
