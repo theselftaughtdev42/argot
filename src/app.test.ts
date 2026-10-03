@@ -70,13 +70,18 @@ function startHjkl(): void {
   press("Enter");
 }
 
-/** Steers the cursor one step toward the target, as a player would. */
-function stepTowardTarget(root: HTMLElement): void {
+/** The hjkl key that would move the cursor one step toward the target. */
+function keyTowardTarget(root: HTMLElement): string {
   const cursor = cellIndex(root, ".cell-cursor");
   const target = cellIndex(root, ".cell-target");
   const dx = (target % GRID_SIZE) - (cursor % GRID_SIZE);
   const dy = Math.floor(target / GRID_SIZE) - Math.floor(cursor / GRID_SIZE);
-  press(dx < 0 ? "h" : dx > 0 ? "l" : dy < 0 ? "k" : "j");
+  return dx < 0 ? "h" : dx > 0 ? "l" : dy < 0 ? "k" : "j";
+}
+
+/** Steers the cursor one step toward the target, as a player would. */
+function stepTowardTarget(root: HTMLElement): void {
+  press(keyTowardTarget(root));
 }
 
 function playToCompletion(root: HTMLElement): void {
@@ -192,7 +197,166 @@ describe("hjkl splash", () => {
   });
 });
 
+describe("command mode on the splash", () => {
+  it("Esc greys the splash and opens the command line", () => {
+    const root = load();
+    run("vim hjkl");
+    press("Escape");
+    expect(root.querySelector(".game-greyed")).not.toBeNull();
+    expect(textOf(root, ".command-line")).toBe("");
+    expect(textOf(root, ".shell-bar .hint")).toBe("type :q! to quit");
+  });
+
+  it(":q! returns home", () => {
+    const root = load();
+    run("vim hjkl");
+    press("Escape");
+    run(":q!");
+    expect(screenOf(root)).toBe("screen-home");
+  });
+
+  it("an unknown command shows an error and stays on the splash", () => {
+    const root = load();
+    run("vim hjkl");
+    press("Escape");
+    run(":wq");
+    expect(textOf(root, ".error")).toBe(":wq isn't supported in argot (use :q! to quit)");
+    expect(screenOf(root)).toBe("screen-landing");
+  });
+
+  it("Esc goes back to the splash, where Enter still starts the drill", () => {
+    const root = load();
+    run("vim hjkl");
+    press("Escape");
+    press("Escape");
+    expect(root.querySelector(".game-greyed")).toBeNull();
+    expect(root.querySelector(".command-line")).toBeNull();
+    expect(screenOf(root)).toBe("screen-landing");
+
+    press("Enter");
+    expect(screenOf(root)).toBe("screen-drill");
+  });
+});
+
 describe("hjkl drill", () => {
+  it("shows a hint that Esc opens commands", () => {
+    const root = load();
+    startHjkl();
+    expect(textOf(root, ".hint")).toBe("press Esc for commands");
+  });
+});
+
+describe("command mode in the drill", () => {
+  it("Esc greys the game and opens an empty command line with a hint to quit", () => {
+    const root = load();
+    startHjkl();
+    press("Escape");
+    expect(root.querySelector(".game-greyed")).not.toBeNull();
+    expect(textOf(root, ".command-line")).toBe("");
+    expect(textOf(root, ".hint")).toBe("type :q! to quit");
+  });
+
+  it("echoes typed characters on the command line, and Backspace deletes them", () => {
+    const root = load();
+    startHjkl();
+    press("Escape");
+    type(":qq");
+    expect(textOf(root, ".command-line")).toBe(":qq");
+    press("Backspace");
+    expect(textOf(root, ".command-line")).toBe(":q");
+  });
+
+  it("hjkl type on the command line instead of moving the cursor", () => {
+    const root = load();
+    startHjkl();
+    const start = cellIndex(root, ".cell-cursor");
+    const key = keyTowardTarget(root);
+    press("Escape");
+    press(key);
+    expect(cellIndex(root, ".cell-cursor")).toBe(start);
+    expect(textOf(root, ".command-line")).toBe(key);
+  });
+
+  it("keeps the timer running while greyed", () => {
+    const root = load();
+    startHjkl();
+    stepTowardTarget(root);
+    press("Escape");
+    vi.advanceTimersByTime(2000);
+    expect(parseFloat(textOf(root, ".timer")!)).toBeGreaterThanOrEqual(2);
+  });
+
+  it("Esc closes the command line and resumes the drill where it was", () => {
+    const root = load();
+    startHjkl();
+    stepTowardTarget(root);
+    const cursor = cellIndex(root, ".cell-cursor");
+    press("Escape");
+    type(":q");
+    press("Escape");
+    expect(root.querySelector(".game-greyed")).toBeNull();
+    expect(root.querySelector(".command-line")).toBeNull();
+    expect(textOf(root, ".hint")).toBe("press Esc for commands");
+    expect(cellIndex(root, ".cell-cursor")).toBe(cursor);
+
+    stepTowardTarget(root);
+    expect(cellIndex(root, ".cell-cursor")).not.toBe(cursor);
+  });
+
+  it(":q! abandons the run and returns home without touching the best time", () => {
+    localStorage.setItem("hjkl:bestTimeMs", "14320");
+    const root = load();
+    startHjkl();
+    stepTowardTarget(root);
+    press("Escape");
+    run(":q!");
+    expect(screenOf(root)).toBe("screen-home");
+    expect(localStorage.getItem("hjkl:bestTimeMs")).toBe("14320");
+
+    type("ls");
+    expect(textOf(root, ".prompt-input")).toBe("ls");
+  });
+
+  it.each([
+    [":q", ":q isn't supported in argot (use :q! to quit)"],
+    [":wq", ":wq isn't supported in argot (use :q! to quit)"],
+    [":x", ":x isn't supported in argot (use :q! to quit)"],
+    ["q!", "q! isn't supported in argot (use :q! to quit)"],
+  ])("%s shows an error naming what is supported, in place of the hint, and stays greyed", (command, error) => {
+    const root = load();
+    startHjkl();
+    press("Escape");
+    run(command);
+    expect(textOf(root, ".error")).toBe(error);
+    expect(root.querySelector(".hint")).toBeNull();
+    expect(root.querySelector(".game-greyed")).not.toBeNull();
+    expect(textOf(root, ".command-line")).toBe("");
+    expect(screenOf(root)).toBe("screen-drill");
+  });
+
+  it("never labels play or the command line as insert mode", () => {
+    const root = load();
+    run("vim hjkl");
+    const screens = [root.textContent];
+    press("Escape");
+    screens.push(root.textContent);
+    press("Escape");
+    press("Enter");
+    screens.push(root.textContent);
+    press("Escape");
+    screens.push(root.textContent);
+    for (const text of screens) expect(text).not.toMatch(/insert/i);
+  });
+
+  it("does nothing on Enter at an empty command line", () => {
+    const root = load();
+    startHjkl();
+    press("Escape");
+    press("Enter");
+    expect(root.querySelector(".error")).toBeNull();
+    expect(textOf(root, ".hint")).toBe("type :q! to quit");
+  });
+
   it("ignores held-down and Ctrl/Cmd/Alt-modified hjkl", () => {
     const root = load();
     startHjkl();
