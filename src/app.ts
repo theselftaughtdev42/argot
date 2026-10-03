@@ -1,11 +1,11 @@
 import { games, type GameScreen, type GameSession } from "./games/registry";
 import { commands, type Shell } from "./shell/commands";
-import { renderGameBar, renderHome, type HomeState, type ShellOutput } from "./shell/renderer";
+import { renderCommandLine, renderGameFrame, renderHome, type HomeState, type ShellOutput } from "./shell/renderer";
 
 type RunningGame = {
   session: GameSession | null;
   container: HTMLElement;
-  bar: HTMLElement;
+  cmdline: HTMLElement;
   screen: GameScreen;
   /** What's typed on the command line, or null while it's closed. */
   command: string | null;
@@ -21,14 +21,14 @@ export function mountApp(root: HTMLElement): void {
     if (!game) return;
     // Greying pulls attention from play to the command line; results has no play to dim.
     game.container.classList.toggle("game-greyed", game.command !== null && game.screen !== "results");
-    renderGameBar(game.bar, game.screen, game.command, game.error);
+    renderCommandLine(game.cmdline, game.screen, game.command, game.error);
   }
 
   function launchGame(name: string): void {
-    root.innerHTML = `<div class="game-frame"><div class="game"></div><div class="shell-bar"></div></div>`;
+    const { stage, cmdline } = renderGameFrame(root, name);
     const running: RunningGame = {
-      container: root.querySelector<HTMLElement>(".game")!,
-      bar: root.querySelector<HTMLElement>(".shell-bar")!,
+      container: stage,
+      cmdline,
       session: null,
       screen: "splash",
       command: null,

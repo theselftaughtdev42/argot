@@ -19,10 +19,15 @@ beforeEach(() => {
   });
 });
 
-afterEach(() => {
+afterEach(async () => {
   for (const [type, listener] of listeners) window.removeEventListener(type, listener);
   vi.restoreAllMocks();
   vi.useRealTimers();
+  // happy-dom caches query results behind WeakRefs, and V8 keeps every WeakRef
+  // target alive until the event loop turns. Tests otherwise run back to back
+  // on microtasks, so each test's discarded screens pile up until the worker
+  // runs out of memory. Yielding a macrotask lets them be collected.
+  await new Promise((resolve) => setTimeout(resolve, 0));
 });
 
 // A fresh mount is what loading or reloading the page does.
@@ -56,6 +61,14 @@ function screenOf(root: HTMLElement): string | undefined {
 
 function textOf(root: HTMLElement, selector: string): string | undefined {
   return root.querySelector(selector)?.textContent ?? undefined;
+}
+
+/** The command-line hint on splash and play while the line is closed. */
+const PLAY_HINT = "Esc then :q! back to home without saving";
+
+/** The keys and commands highlighted in the command line's hint. */
+function hintKeys(root: HTMLElement): string[] {
+  return [...root.querySelectorAll(".cmdline-hint .ag-key")].map((key) => key.textContent!);
 }
 
 function cellIndex(root: HTMLElement, selector: string): number {
@@ -306,14 +319,84 @@ describe("hjkl splash", () => {
   });
 });
 
+describe("game frame", () => {
+  it("pins a statusline with the mode and the game's name under the game", () => {
+    const root = load();
+    run("vim hjkl");
+    expect(textOf(root, ".ag-statusline .ag-mode")).toBe("TMP");
+    expect(textOf(root, ".ag-statusline")).toContain("hjkl");
+    const stage = root.querySelector(".screen")!;
+    const statusline = root.querySelector(".ag-statusline")!;
+    const cmdline = root.querySelector(".ag-cmdline")!;
+    expect(stage.compareDocumentPosition(statusline) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(statusline.compareDocumentPosition(cmdline) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("keeps the mode at TMP through Esc, play and results", () => {
+    const root = load();
+    run("vim hjkl");
+    press("Escape");
+    expect(textOf(root, ".ag-mode")).toBe("TMP");
+    press("Escape");
+    press("Enter");
+    press("Escape");
+    expect(textOf(root, ".ag-mode")).toBe("TMP");
+    press("Escape");
+    playToCompletion(root);
+    expect(textOf(root, ".ag-mode")).toBe("TMP");
+  });
+
+  it.each([
+    ["splash", () => run("vim hjkl")],
+    ["play", startHjkl],
+  ])("on %s with the command line closed, hints at Esc then :q! to go home without saving", (_screen, open) => {
+    const root = load();
+    open();
+    expect(textOf(root, ".cmdline-hint")).toBe(PLAY_HINT);
+    expect(hintKeys(root)).toEqual(["Esc", ":q!"]);
+    expect(root.querySelector(".ag-cmdline .ag-cursor")).toBeNull();
+  });
+
+  it.each([
+    ["splash", () => run("vim hjkl")],
+    ["play", startHjkl],
+  ])("on %s with the command line open, shows what's typed with a cursor and hints at :q!", (_screen, open) => {
+    const root = load();
+    open();
+    press("Escape");
+    type(":q");
+    expect(textOf(root, ".cmdline-input")).toBe(":q");
+    expect(root.querySelector(".cmdline-input + .ag-cursor")).not.toBeNull();
+    expect(textOf(root, ".cmdline-hint")).toBe("type :q! to quit");
+    expect(hintKeys(root)).toEqual([":q!"]);
+  });
+
+  it("on results, hints at :wq and :q!", () => {
+    const root = load();
+    startHjkl();
+    playToCompletion(root);
+    expect(textOf(root, ".cmdline-hint")).toBe(":wq save & quit · :q! quit without saving");
+    expect(hintKeys(root)).toEqual([":wq", ":q!"]);
+  });
+
+  it("shows an unsupported command's error in place of the hint", () => {
+    const root = load();
+    run("vim hjkl");
+    press("Escape");
+    run(":x");
+    expect(textOf(root, ".ag-cmdline .ag-error")).toBe(":x isn't supported in argot (use :q! to quit)");
+    expect(root.querySelector(".cmdline-hint")).toBeNull();
+  });
+});
+
 describe("command mode on the splash", () => {
   it("Esc greys the splash and opens the command line", () => {
     const root = load();
     run("vim hjkl");
     press("Escape");
     expect(root.querySelector(".game-greyed")).not.toBeNull();
-    expect(textOf(root, ".command-line")).toBe("");
-    expect(textOf(root, ".shell-bar .hint")).toBe("type :q! to quit");
+    expect(textOf(root, ".cmdline-input")).toBe("");
+    expect(textOf(root, ".cmdline-hint")).toBe("type :q! to quit");
   });
 
   it(":q! returns home", () => {
@@ -329,7 +412,7 @@ describe("command mode on the splash", () => {
     run("vim hjkl");
     press("Escape");
     run(":wq");
-    expect(textOf(root, ".error")).toBe(":wq isn't supported in argot (use :q! to quit)");
+    expect(textOf(root, ".ag-cmdline .ag-error")).toBe(":wq isn't supported in argot (use :q! to quit)");
     expect(screenOf(root)).toBe("screen-landing");
   });
 
@@ -339,19 +422,11 @@ describe("command mode on the splash", () => {
     press("Escape");
     press("Escape");
     expect(root.querySelector(".game-greyed")).toBeNull();
-    expect(root.querySelector(".command-line")).toBeNull();
+    expect(root.querySelector(".cmdline-input")).toBeNull();
     expect(screenOf(root)).toBe("screen-landing");
 
     press("Enter");
     expect(screenOf(root)).toBe("screen-drill");
-  });
-});
-
-describe("hjkl drill", () => {
-  it("shows a hint that Esc opens commands", () => {
-    const root = load();
-    startHjkl();
-    expect(textOf(root, ".hint")).toBe("press Esc for commands");
   });
 });
 
@@ -361,8 +436,8 @@ describe("command mode in the drill", () => {
     startHjkl();
     press("Escape");
     expect(root.querySelector(".game-greyed")).not.toBeNull();
-    expect(textOf(root, ".command-line")).toBe("");
-    expect(textOf(root, ".hint")).toBe("type :q! to quit");
+    expect(textOf(root, ".cmdline-input")).toBe("");
+    expect(textOf(root, ".cmdline-hint")).toBe("type :q! to quit");
   });
 
   it("echoes typed characters on the command line, and Backspace deletes them", () => {
@@ -370,9 +445,9 @@ describe("command mode in the drill", () => {
     startHjkl();
     press("Escape");
     type(":qq");
-    expect(textOf(root, ".command-line")).toBe(":qq");
+    expect(textOf(root, ".cmdline-input")).toBe(":qq");
     press("Backspace");
-    expect(textOf(root, ".command-line")).toBe(":q");
+    expect(textOf(root, ".cmdline-input")).toBe(":q");
   });
 
   it("hjkl type on the command line instead of moving the cursor", () => {
@@ -383,7 +458,7 @@ describe("command mode in the drill", () => {
     press("Escape");
     press(key);
     expect(cellIndex(root, ".cell-cursor")).toBe(start);
-    expect(textOf(root, ".command-line")).toBe(key);
+    expect(textOf(root, ".cmdline-input")).toBe(key);
   });
 
   it("keeps the timer running while greyed", () => {
@@ -404,8 +479,8 @@ describe("command mode in the drill", () => {
     type(":q");
     press("Escape");
     expect(root.querySelector(".game-greyed")).toBeNull();
-    expect(root.querySelector(".command-line")).toBeNull();
-    expect(textOf(root, ".hint")).toBe("press Esc for commands");
+    expect(root.querySelector(".cmdline-input")).toBeNull();
+    expect(textOf(root, ".cmdline-hint")).toBe(PLAY_HINT);
     expect(cellIndex(root, ".cell-cursor")).toBe(cursor);
 
     stepTowardTarget(root);
@@ -436,10 +511,10 @@ describe("command mode in the drill", () => {
     startHjkl();
     press("Escape");
     run(command);
-    expect(textOf(root, ".error")).toBe(error);
-    expect(root.querySelector(".hint")).toBeNull();
+    expect(textOf(root, ".ag-cmdline .ag-error")).toBe(error);
+    expect(root.querySelector(".cmdline-hint")).toBeNull();
     expect(root.querySelector(".game-greyed")).not.toBeNull();
-    expect(textOf(root, ".command-line")).toBe("");
+    expect(textOf(root, ".cmdline-input")).toBe("");
     expect(screenOf(root)).toBe("screen-drill");
   });
 
@@ -462,8 +537,8 @@ describe("command mode in the drill", () => {
     startHjkl();
     press("Escape");
     press("Enter");
-    expect(root.querySelector(".error")).toBeNull();
-    expect(textOf(root, ".hint")).toBe("type :q! to quit");
+    expect(root.querySelector(".ag-cmdline .ag-error")).toBeNull();
+    expect(textOf(root, ".cmdline-hint")).toBe("type :q! to quit");
   });
 
   it("ignores held-down and Ctrl/Cmd/Alt-modified hjkl", () => {
@@ -487,12 +562,12 @@ describe("hjkl results", () => {
     expect(screenOf(root)).toBe("screen-results");
     expect(textOf(root, ".final-time")).toMatch(/^\d+\.\d\ds$/);
     expect(root.querySelector(".new-best")).not.toBeNull();
-    expect(textOf(root, ".command-line")).toBe("");
+    expect(textOf(root, ".cmdline-input")).toBe("");
     expect(root.querySelector(".game-greyed")).toBeNull();
     expect(root.querySelector("button")).toBeNull();
 
     type(":w");
-    expect(textOf(root, ".command-line")).toBe(":w");
+    expect(textOf(root, ".cmdline-input")).toBe(":w");
   });
 
   it(":wq on a time that isn't a new best leaves the stored best and returns home", () => {
@@ -537,7 +612,7 @@ describe("hjkl results", () => {
     const root = load();
     startHjkl();
     playToCompletion(root);
-    expect(textOf(root, ".hint")).toBe(":wq save & quit · :q! quit without saving");
+    expect(textOf(root, ".cmdline-hint")).toBe(":wq save & quit · :q! quit without saving");
   });
 
   it.each([":q", ":w", ":x", "wq"])("%s shows an error naming :wq and :q!, and stays on results", (command) => {
@@ -545,8 +620,8 @@ describe("hjkl results", () => {
     startHjkl();
     playToCompletion(root);
     run(command);
-    expect(textOf(root, ".error")).toBe(`${command} isn't supported in argot (use :wq or :q!)`);
-    expect(textOf(root, ".command-line")).toBe("");
+    expect(textOf(root, ".ag-cmdline .ag-error")).toBe(`${command} isn't supported in argot (use :wq or :q!)`);
+    expect(textOf(root, ".cmdline-input")).toBe("");
     expect(screenOf(root)).toBe("screen-results");
   });
 
@@ -556,7 +631,7 @@ describe("hjkl results", () => {
     playToCompletion(root);
     type(":x");
     press("Escape");
-    expect(textOf(root, ".command-line")).toBe("");
+    expect(textOf(root, ".cmdline-input")).toBe("");
 
     run(":q!");
     expect(screenOf(root)).toBe("home");
