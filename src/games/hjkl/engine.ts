@@ -1,5 +1,5 @@
 export const GRID_SIZE = 10;
-export const WIN_TOUCHES = 20;
+export const WIN_TOUCHES = 15;
 export const MIN_SPAWN_DISTANCE = 5;
 
 export type Direction = "h" | "j" | "k" | "l";
