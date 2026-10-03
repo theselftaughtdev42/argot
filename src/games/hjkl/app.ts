@@ -51,9 +51,17 @@ export function mountHjklGame(root: HTMLElement): void {
     animationFrame = requestAnimationFrame(tick);
   }
 
+  function handleLandingKeydown(event: KeyboardEvent): void {
+    if (event.repeat || event.ctrlKey || event.metaKey || event.altKey) return;
+    if (event.key !== "Enter") return;
+    window.removeEventListener("keydown", handleLandingKeydown);
+    startDrill();
+  }
+
   function showLanding(): void {
     screen = "landing";
-    renderLanding(root, getBestTime(), startDrill);
+    renderLanding(root, getBestTime());
+    window.addEventListener("keydown", handleLandingKeydown);
   }
 
   showLanding();

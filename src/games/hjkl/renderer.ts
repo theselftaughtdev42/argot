@@ -1,11 +1,7 @@
 import { GRID_SIZE, WIN_TOUCHES, type GameState } from "./engine";
 import { formatTime } from "./timer";
 
-export function renderLanding(
-  root: HTMLElement,
-  bestTimeMs: number | null,
-  onStart: () => void,
-): void {
+export function renderLanding(root: HTMLElement, bestTimeMs: number | null): void {
   root.innerHTML = `
     <section class="screen screen-landing">
       <h1>HJKL Drill</h1>
@@ -25,12 +21,9 @@ export function renderLanding(
           ? `<p class="best-time">Best time: <strong>${formatTime(bestTimeMs)}</strong></p>`
           : ""
       }
-      <button type="button" class="start-button" autofocus>Start</button>
+      <p class="hint">press Enter to start</p>
     </section>
   `;
-  const button = root.querySelector<HTMLButtonElement>(".start-button");
-  button?.addEventListener("click", onStart);
-  button?.focus();
 }
 
 export function renderDrill(root: HTMLElement, state: GameState, elapsedMs: number): void {

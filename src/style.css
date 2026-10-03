@@ -80,6 +80,42 @@ kbd {
   color: var(--accent);
 }
 
+.screen-home {
+  align-items: flex-start;
+  text-align: left;
+  gap: 0.5rem;
+}
+
+.screen-home pre,
+.prompt {
+  margin: 0;
+  font-family: inherit;
+  white-space: pre-wrap;
+}
+
+.prompt-sign {
+  color: var(--accent);
+}
+
+.prompt-input::after {
+  content: "";
+  display: inline-block;
+  width: 0.6em;
+  height: 1.1em;
+  vertical-align: text-bottom;
+  background: var(--fg);
+}
+
+.error {
+  color: #ff6b6b;
+}
+
+.hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
 button {
   font-family: inherit;
   font-size: 1rem;
