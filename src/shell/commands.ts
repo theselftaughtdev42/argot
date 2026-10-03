@@ -2,8 +2,8 @@ import { games } from "../games/registry";
 
 /** What a home command can do to the shell. */
 export interface Shell {
-  /** Shows `text` under the prompt, replacing the last output. */
-  print(text: string): void;
+  /** Shows `items` side by side under the prompt, like `ls`, replacing the last output. */
+  list(items: string[]): void;
   /** Shows `text` as an error under the prompt, replacing the last output. */
   error(text: string): void;
   /** Leaves home for the game called `name`, which must be in the registry. */
@@ -27,7 +27,7 @@ export const commands = new Map<string, Command>([
       usage: "ls",
       description: "list games",
       run(_args, shell) {
-        shell.print([...games.keys()].join("  "));
+        shell.list([...games.keys()]);
       },
     },
   ],

@@ -1,6 +1,6 @@
 import { games, type GameScreen, type GameSession } from "./games/registry";
 import { commands, type Shell } from "./shell/commands";
-import { renderGameBar, renderHome, type ShellOutput } from "./shell/renderer";
+import { renderGameBar, renderHome, type HomeState, type ShellOutput } from "./shell/renderer";
 
 type RunningGame = {
   session: GameSession | null;
@@ -14,8 +14,7 @@ type RunningGame = {
 };
 
 export function mountApp(root: HTMLElement): void {
-  let input = "";
-  let output: ShellOutput | null = null;
+  const home: HomeState = { input: "", last: null, compact: false };
   let game: RunningGame | null = null;
 
   function renderGame(): void {
@@ -26,7 +25,7 @@ export function mountApp(root: HTMLElement): void {
   }
 
   function launchGame(name: string): void {
-    root.innerHTML = `<div class="game"></div><div class="shell-bar"></div>`;
+    root.innerHTML = `<div class="game-frame"><div class="game"></div><div class="shell-bar"></div></div>`;
     const running: RunningGame = {
       container: root.querySelector<HTMLElement>(".game")!,
       bar: root.querySelector<HTMLElement>(".shell-bar")!,
@@ -47,28 +46,29 @@ export function mountApp(root: HTMLElement): void {
   function quitGame(running: RunningGame): void {
     running.session?.destroy();
     game = null;
-    renderHome(root, input, output);
+    renderHome(root, home);
   }
-
-  const shell: Shell = {
-    print(text) {
-      output = { kind: "output", text };
-    },
-    error(text) {
-      output = { kind: "error", text };
-    },
-    launchGame,
-  };
 
   function runCommand(line: string): void {
     const [name, ...args] = line.split(/\s+/);
     if (!name) {
-      output = null;
+      home.last = null;
       return;
     }
+    const show = (output: ShellOutput) => (home.last = { name, output });
+    const shell: Shell = {
+      list: (items) => show({ kind: "list", items }),
+      error: (text) => show({ kind: "error", text }),
+      launchGame,
+    };
+    // Cleared first so a game launch leaves a clean home to come back to.
+    home.last = null;
     const command = commands.get(name);
     if (command) command.run(args, shell);
     else shell.error(`${name}: command not found`);
+    if (game) return;
+    // Once the visitor has run a command, its output matters more than the logo.
+    home.compact = true;
   }
 
   function handleGameKeydown(game: RunningGame, event: KeyboardEvent): void {
@@ -112,17 +112,17 @@ export function mountApp(root: HTMLElement): void {
 
   function handleHomeKeydown(event: KeyboardEvent): void {
     if (event.key === "Enter") {
-      runCommand(input.trim());
-      input = "";
+      runCommand(home.input.trim());
+      home.input = "";
       if (game) return;
     } else if (event.key === "Backspace") {
-      input = input.slice(0, -1);
+      home.input = home.input.slice(0, -1);
     } else if (event.key.length === 1) {
-      input += event.key;
+      home.input += event.key;
     } else {
       return;
     }
-    renderHome(root, input, output);
+    renderHome(root, home);
   }
 
   function handleKeydown(event: KeyboardEvent): void {
@@ -132,5 +132,5 @@ export function mountApp(root: HTMLElement): void {
   }
 
   window.addEventListener("keydown", handleKeydown);
-  renderHome(root, input, output);
+  renderHome(root, home);
 }

@@ -48,10 +48,17 @@ html, body {
 }
 .ag-tagline { color: var(--ag-fg-muted); margin-top: 10px; }
 
+/* compact: once the shell has output, the logo shrinks to the top center */
+.ag-brand--compact { text-align: center; }
+.ag-brand--compact .ag-logo { font-size: 32px; }
+
 /* ---------- text helpers ---------- */
 
 .ag-muted { color: var(--ag-fg-muted); }
 .ag-key { color: var(--ag-highlight); font-weight: var(--ag-weight-bold); }
+.ag-error { color: var(--ag-error); }
+/* helper text under the prompt */
+.ag-hint { color: var(--ag-fg-muted); margin-top: 14px; }
 
 /* ---------- shell ---------- */
 
@@ -87,6 +94,15 @@ html, body {
   color: var(--ag-accent);
   font-weight: var(--ag-weight-bold);
 }
+
+/* ---------- home ---------- */
+
+.ag-home--compact {
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 28px;
+}
+.ag-home--compact .ag-stack { margin-block: auto; }
 
 /* ---------- game ---------- */
 
@@ -163,7 +179,11 @@ body {
 
 #app {
   width: 100%;
+}
+
+.game-frame {
   max-width: 640px;
+  margin: 0 auto;
   padding: 2rem;
 }
 
@@ -213,30 +233,6 @@ kbd {
   color: var(--ag-highlight);
 }
 
-.screen-home {
-  align-items: flex-start;
-  text-align: left;
-  gap: 0.5rem;
-}
-
-.screen-home pre,
-.prompt {
-  margin: 0;
-  font-family: inherit;
-  white-space: pre-wrap;
-}
-
-.screen-home .output {
-  color: var(--ag-accent);
-  font-weight: var(--ag-weight-bold);
-}
-
-.prompt-sign {
-  color: var(--ag-prompt);
-  font-weight: var(--ag-weight-bold);
-}
-
-.prompt-input::after,
 .command-line::after {
   content: "";
   display: inline-block;

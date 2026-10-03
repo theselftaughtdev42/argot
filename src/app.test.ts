@@ -48,7 +48,9 @@ function run(command: string): void {
   press("Enter");
 }
 
+/** "home", or the class naming the game screen showing. */
 function screenOf(root: HTMLElement): string | undefined {
+  if (root.querySelector(".ag-home")) return "home";
   return root.querySelector(".screen")?.classList[1];
 }
 
@@ -85,9 +87,28 @@ function playToCompletion(root: HTMLElement): void {
 }
 
 describe("home command line", () => {
-  it("shows a hint telling the visitor to type ls", () => {
+  const LS_HINT = "type ls and press enter";
+  const VIM_HINT = "type vim and a game name";
+
+  function keysIn(root: HTMLElement, selector: string): string[] {
+    return [...root.querySelectorAll(`${selector} .ag-key`)].map((key) => key.textContent!);
+  }
+
+  it("greets a fresh visit with the logo, tagline, a hint to type ls, and the prompt's cursor", () => {
     const root = load();
-    expect(textOf(root, ".hint")).toBe("type ls to list games");
+    expect(textOf(root, ".ag-logo")).toBe("argot");
+    expect(textOf(root, ".ag-tagline")).toBe("learn to speak vim. no mouse, just keys.");
+    expect(textOf(root, ".home-hint")).toBe(LS_HINT);
+    expect(keysIn(root, ".home-hint")).toEqual(["ls", "enter"]);
+    expect(root.querySelector(".prompt-input + .ag-cursor")).not.toBeNull();
+    expect(root.querySelector(".ag-ls, .ag-error")).toBeNull();
+  });
+
+  it("puts the hint beneath the prompt", () => {
+    const root = load();
+    const prompt = root.querySelector(".prompt-input")!;
+    const hint = root.querySelector(".home-hint")!;
+    expect(prompt.compareDocumentPosition(hint) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it("echoes typed characters at the prompt, and Backspace deletes them", () => {
@@ -106,44 +127,136 @@ describe("home command line", () => {
     expect(textOf(root, ".prompt-input")).toBe("");
   });
 
-  it("ls lists the available games and clears the prompt", () => {
+  it("ls lists the games, hints at vim, and clears the prompt, without repeating the command", () => {
     const root = load();
     run("ls");
-    expect(textOf(root, ".output")).toBe("hjkl");
+    expect(root.textContent).not.toMatch(/\bls\b/);
+    expect([...root.querySelectorAll(".ag-ls li")].map((li) => li.textContent)).toEqual(["hjkl"]);
+    expect(textOf(root, ".home-hint")).toBe(VIM_HINT);
+    expect(keysIn(root, ".home-hint")).toEqual(["vim"]);
     expect(textOf(root, ".prompt-input")).toBe("");
   });
 
-  it("reports any other command as not found and stays on home", () => {
+  it("reports any other command as not found, as an error, and stays on home", () => {
     const root = load();
     run("cd games");
-    expect(textOf(root, ".error")).toBe("cd: command not found");
-    expect(root.querySelector(".screen-home")).not.toBeNull();
+    expect(textOf(root, ".ag-error")).toBe("cd: command not found");
+    expect(screenOf(root)).toBe("home");
+  });
+
+  it("an error after ls replaces the list and hints at ls again", () => {
+    const root = load();
+    run("ls");
+    run("pwd");
+    expect(root.querySelector(".ag-ls")).toBeNull();
+    expect(textOf(root, ".ag-error")).toBe("pwd: command not found");
+    expect(textOf(root, ".home-hint")).toBe(LS_HINT);
   });
 
   it("does nothing on Enter at an empty prompt", () => {
     const root = load();
     press("Enter");
-    expect(root.querySelector(".error")).toBeNull();
+    expect(root.querySelector(".ag-error")).toBeNull();
+    expect(root.querySelector(".ag-error")).toBeNull();
+    expect(textOf(root, ".home-hint")).toBe(LS_HINT);
+  });
+
+  it("Enter at an empty prompt clears the last output and hints at ls", () => {
+    const root = load();
+    run("ls");
+    press("Enter");
+    expect(root.querySelector(".ag-ls")).toBeNull();
+    expect(textOf(root, ".home-hint")).toBe(LS_HINT);
   });
 
   it("vim with no game name prints an error and stays on home", () => {
     const root = load();
     run("vim");
-    expect(textOf(root, ".error")).toBe("vim: missing game name");
-    expect(root.querySelector(".screen-home")).not.toBeNull();
+    expect(textOf(root, ".ag-error")).toBe("vim: missing game name");
+    expect(textOf(root, ".home-hint")).toBe(LS_HINT);
+    expect(screenOf(root)).toBe("home");
   });
 
   it("vim with an unknown game prints an error and stays on home", () => {
     const root = load();
     run("vim tetris");
-    expect(textOf(root, ".error")).toBe("vim: no such game: tetris");
-    expect(root.querySelector(".screen-home")).not.toBeNull();
+    expect(textOf(root, ".ag-error")).toBe("vim: no such game: tetris");
+    expect(screenOf(root)).toBe("home");
   });
 
   it("does not treat built-in object names as games", () => {
     const root = load();
     run("vim constructor");
-    expect(textOf(root, ".error")).toBe("vim: no such game: constructor");
+    expect(textOf(root, ".ag-error")).toBe("vim: no such game: constructor");
+  });
+
+  it("escapes what's typed rather than rendering it as markup", () => {
+    const root = load();
+    run("<b>hi</b>");
+    expect(textOf(root, ".ag-error")).toBe("<b>hi</b>: command not found");
+    expect(root.querySelector(".ag-error b")).toBeNull();
+  });
+
+  it("returning from a game shows a clean home, with no output and a hint to type ls", () => {
+    const root = load();
+    run("ls");
+    run("vim hjkl");
+    press("Escape");
+    run(":q!");
+    expect(root.querySelector(".ag-ls, .ag-error")).toBeNull();
+    expect(textOf(root, ".home-hint")).toBe(LS_HINT);
+    expect(textOf(root, ".prompt-input")).toBe("");
+  });
+});
+
+describe("home logo", () => {
+  function isCompact(root: HTMLElement): boolean {
+    return root.querySelector(".ag-brand--compact") !== null;
+  }
+
+  it("is full size on a fresh home", () => {
+    expect(isCompact(load())).toBe(false);
+  });
+
+  it.each(["ls", "cd games", "vim", "vim tetris"])("becomes compact, without the tagline, after %s", (command) => {
+    const root = load();
+    run(command);
+    expect(isCompact(root)).toBe(true);
+    expect(textOf(root, ".ag-logo")).toBe("argot");
+    expect(root.querySelector(".ag-tagline")).toBeNull();
+  });
+
+  it("stays full size after an empty Enter", () => {
+    const root = load();
+    press("Enter");
+    expect(isCompact(root)).toBe(false);
+  });
+
+  it("stays full size after launching and quitting a game from a fresh home", () => {
+    const root = load();
+    run("vim hjkl");
+    press("Escape");
+    run(":q!");
+    expect(screenOf(root)).toBe("home");
+    expect(isCompact(root)).toBe(false);
+  });
+
+  it("stays compact for the visit, through empty Enters and a game", () => {
+    const root = load();
+    run("ls");
+    press("Enter");
+    expect(isCompact(root)).toBe(true);
+
+    run("vim hjkl");
+    press("Escape");
+    run(":q!");
+    expect(isCompact(root)).toBe(true);
+  });
+
+  it("is full size again after a reload", () => {
+    load();
+    run("ls");
+    expect(isCompact(load())).toBe(false);
   });
 });
 
@@ -208,7 +321,7 @@ describe("command mode on the splash", () => {
     run("vim hjkl");
     press("Escape");
     run(":q!");
-    expect(screenOf(root)).toBe("screen-home");
+    expect(screenOf(root)).toBe("home");
   });
 
   it("an unknown command shows an error and stays on the splash", () => {
@@ -306,7 +419,7 @@ describe("command mode in the drill", () => {
     stepTowardTarget(root);
     press("Escape");
     run(":q!");
-    expect(screenOf(root)).toBe("screen-home");
+    expect(screenOf(root)).toBe("home");
     expect(localStorage.getItem("hjkl:bestTimeMs")).toBe("14320");
 
     type("ls");
@@ -390,7 +503,7 @@ describe("hjkl results", () => {
     expect(root.querySelector(".new-best")).toBeNull();
 
     run(":wq");
-    expect(screenOf(root)).toBe("screen-home");
+    expect(screenOf(root)).toBe("home");
     expect(localStorage.getItem("hjkl:bestTimeMs")).toBe("1");
   });
 
@@ -401,7 +514,7 @@ describe("hjkl results", () => {
     expect(root.querySelector(".new-best")).not.toBeNull();
 
     run(":q!");
-    expect(screenOf(root)).toBe("screen-home");
+    expect(screenOf(root)).toBe("home");
     expect(localStorage.getItem("hjkl:bestTimeMs")).toBeNull();
   });
 
@@ -446,7 +559,7 @@ describe("hjkl results", () => {
     expect(textOf(root, ".command-line")).toBe("");
 
     run(":q!");
-    expect(screenOf(root)).toBe("screen-home");
+    expect(screenOf(root)).toBe("home");
   });
 
   it("doesn't save the best time just by finishing", () => {
@@ -469,7 +582,7 @@ describe("full flow", () => {
     expect(screenOf(root)).toBe("screen-results");
 
     run(":q!");
-    expect(screenOf(root)).toBe("screen-home");
+    expect(screenOf(root)).toBe("home");
 
     startHjkl();
     expect(screenOf(root)).toBe("screen-drill");
@@ -487,7 +600,7 @@ describe("full flow", () => {
     const finalTime = textOf(first, ".final-time");
 
     run(":wq");
-    expect(screenOf(first)).toBe("screen-home");
+    expect(screenOf(first)).toBe("home");
 
     const reloaded = load();
     run("vim hjkl");
@@ -499,7 +612,7 @@ describe("loading the site", () => {
   it("lands on home after reloading on the splash", () => {
     load();
     run("vim hjkl");
-    expect(screenOf(load())).toBe("screen-home");
+    expect(screenOf(load())).toBe("home");
   });
 
   it("lands on home after reloading mid-drill", () => {
@@ -508,7 +621,7 @@ describe("loading the site", () => {
     stepTowardTarget(first);
     expect(screenOf(first)).toBe("screen-drill");
 
-    expect(screenOf(load())).toBe("screen-home");
+    expect(screenOf(load())).toBe("home");
   });
 
   it("lands on home after reloading on results", () => {
@@ -517,7 +630,7 @@ describe("loading the site", () => {
     playToCompletion(first);
     expect(screenOf(first)).toBe("screen-results");
 
-    expect(screenOf(load())).toBe("screen-home");
+    expect(screenOf(load())).toBe("home");
   });
 });
 
