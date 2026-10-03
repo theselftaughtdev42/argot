@@ -2,6 +2,8 @@
    Every colour/font comes from --ag-* tokens defined by a theme file
    (themes/<name>.css), selected via <html data-theme="<name>">. */
 
+* { box-sizing: border-box; }
+
 html, body {
   margin: 0;
   background: var(--ag-bg);
@@ -30,7 +32,9 @@ html, body {
   flex-direction: column;
   gap: 28px;
 }
+.ag-stack > * { margin: 0; }
 .ag-stack--narrow { max-width: 560px; gap: 40px; }
+.ag-stack--center { align-items: center; text-align: center; }
 
 /* ---------- logo ---------- */
 
@@ -56,6 +60,9 @@ html, body {
 
 .ag-muted { color: var(--ag-fg-muted); }
 .ag-key { color: var(--ag-highlight); font-weight: var(--ag-weight-bold); }
+.ag-highlight { color: var(--ag-highlight); }
+.ag-title { font-size: inherit; font-weight: var(--ag-weight-bold); }
+.ag-hero { font-size: 48px; line-height: 1.2; font-weight: var(--ag-weight-bold); }
 .ag-error { color: var(--ag-error); }
 /* helper text under the prompt */
 .ag-hint { color: var(--ag-fg-muted); margin-top: 14px; }
@@ -128,11 +135,12 @@ html, body {
   margin: 0;
   white-space: pre;
   font-family: inherit;
-  font-size: 28px;
+  /* 10 cells span 28 columns; shrink so the board never forces a horizontal scroll */
+  font-size: clamp(12px, 5vw, 28px);
   line-height: 1.6;
   color: var(--ag-board-dot);
 }
-.ag-board__player { color: var(--ag-accent); }
+.ag-board__player { background: var(--ag-accent); }
 .ag-board__target { color: var(--ag-target); font-weight: var(--ag-weight-bold); }
 
 .ag-statusline {
@@ -170,117 +178,27 @@ html, body {
   opacity: 0.35;
   filter: grayscale(1);
 }
+/* ...and its cursor holds still, so only the command line's blinks */
+.game-greyed .ag-cursor { animation: none; }
 
-/* ---------- current screens ----------
-   The markup the screens render today, restyled with tokens. These rules go
-   as each screen moves onto the ag-* components above. */
+/* ---------- hjkl ---------- */
 
-* {
-  box-sizing: border-box;
-}
-
-body {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-#app {
-  width: 100%;
-}
-
-.screen {
+.ag-drill {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
-  text-align: center;
+  gap: 32px;
 }
+.ag-drill__info { display: flex; gap: 28px; }
 
-h1 {
-  margin: 0;
-  letter-spacing: 0.05em;
-  font-weight: var(--ag-weight-bold);
-}
-
-kbd {
-  border: 1px solid var(--ag-board-dot);
-  border-radius: 4px;
-  padding: 0.1em 0.4em;
-  font-family: inherit;
-  color: var(--ag-highlight);
-  font-weight: var(--ag-weight-bold);
-}
-
-.instructions {
-  max-width: 32em;
-}
-
-.key-legend {
-  list-style: none;
+.ag-legend {
   display: flex;
-  gap: 1.5rem;
+  flex-wrap: wrap;
+  column-gap: 28px;
+  margin: 0;
   padding: 0;
-  margin: 0;
+  list-style: none;
   color: var(--ag-fg-muted);
-}
-
-.goal {
-  color: var(--ag-fg-muted);
-  max-width: 32em;
-}
-
-.best-time strong,
-.new-best {
-  color: var(--ag-highlight);
-}
-
-.hint {
-  margin: 0;
-  color: var(--ag-fg-muted);
-  font-size: 0.875rem;
-}
-
-.hud {
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
-  font-size: 1.25rem;
-}
-
-.grid {
-  display: grid;
-  grid-template-columns: repeat(var(--grid-size), 1fr);
-  grid-template-rows: repeat(var(--grid-size), 1fr);
-  gap: 2px;
-  background: var(--ag-board-dot);
-  border: 2px solid var(--ag-board-dot);
-  width: min(90vw, 420px);
-  aspect-ratio: 1;
-}
-
-.cell {
-  background: var(--ag-bg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: clamp(0.8rem, 2.5vw, 1.1rem);
-}
-
-.cell-cursor {
-  color: var(--ag-accent);
-  font-weight: var(--ag-weight-bold);
-}
-
-.cell-target {
-  color: var(--ag-target);
-  font-weight: var(--ag-weight-bold);
-}
-
-.final-time {
-  font-size: 2rem;
-  margin: 0;
 }
 
 /* ---------- accessibility ---------- */

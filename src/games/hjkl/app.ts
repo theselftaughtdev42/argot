@@ -2,7 +2,7 @@ import { createGame, move, type Direction, type GameState } from "./engine";
 import { directionFor } from "./input";
 import { Timer } from "./timer";
 import { getBestTime, isNewBest as wouldBeNewBest, saveBestTimeIfBetter } from "./storage";
-import { renderLanding, renderDrill, renderResults } from "./renderer";
+import { renderLanding, renderDrill, renderElapsed, renderResults } from "./renderer";
 import type { GameScreen, GameSession } from "../registry";
 
 type Screen = "landing" | "drill" | "results";
@@ -20,7 +20,7 @@ export function mountHjklGame(
 
   function tick(): void {
     if (screen !== "drill") return;
-    renderDrill(root, state, timer.elapsedMs());
+    renderElapsed(root, timer.elapsedMs());
     animationFrame = requestAnimationFrame(tick);
   }
 
@@ -35,6 +35,8 @@ export function mountHjklGame(
       screen = "results";
       onScreenChange("results");
       renderResults(root, finalTimeMs, isNewBest, getBestTime());
+    } else {
+      renderDrill(root, state, timer.elapsedMs());
     }
   }
 
@@ -50,7 +52,7 @@ export function mountHjklGame(
   function showLanding(): void {
     screen = "landing";
     onScreenChange("splash");
-    renderLanding(root, getBestTime());
+    renderLanding(root);
   }
 
   showLanding();
