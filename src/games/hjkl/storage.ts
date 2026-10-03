@@ -22,10 +22,15 @@ function setBestTime(ms: number): void {
   }
 }
 
+/** Whether `ms` would become the new best: there's no best yet or it beats it. Saves nothing. */
+export function isNewBest(ms: number): boolean {
+  const current = getBestTime();
+  return current === null || ms < current;
+}
+
 /** Persists `ms` as the new best if there's no best yet or it beats it. Returns whether it did. */
 export function saveBestTimeIfBetter(ms: number): boolean {
-  const current = getBestTime();
-  if (current === null || ms < current) {
+  if (isNewBest(ms)) {
     setBestTime(ms);
     return true;
   }

@@ -56,10 +56,6 @@ function textOf(root: HTMLElement, selector: string): string | undefined {
   return root.querySelector(selector)?.textContent ?? undefined;
 }
 
-function click(root: HTMLElement, selector: string): void {
-  root.querySelector<HTMLButtonElement>(selector)!.click();
-}
-
 function cellIndex(root: HTMLElement, selector: string): number {
   return [...root.querySelectorAll(".cell")].findIndex((cell) => cell.matches(selector));
 }
@@ -370,15 +366,112 @@ describe("command mode in the drill", () => {
   });
 });
 
-describe("full flow", () => {
-  it("runs Home → Splash → Drill → Results → Try again → Drill", () => {
+describe("hjkl results", () => {
+  it("shows the final time and new best with the command line already open, and no buttons", () => {
     const root = load();
     startHjkl();
     playToCompletion(root);
     expect(screenOf(root)).toBe("screen-results");
+    expect(textOf(root, ".final-time")).toMatch(/^\d+\.\d\ds$/);
+    expect(root.querySelector(".new-best")).not.toBeNull();
+    expect(textOf(root, ".command-line")).toBe("");
+    expect(root.querySelector(".game-greyed")).toBeNull();
+    expect(root.querySelector("button")).toBeNull();
+
+    type(":w");
+    expect(textOf(root, ".command-line")).toBe(":w");
+  });
+
+  it(":wq on a time that isn't a new best leaves the stored best and returns home", () => {
+    localStorage.setItem("hjkl:bestTimeMs", "1");
+    const root = load();
+    startHjkl();
+    playToCompletion(root);
+    expect(root.querySelector(".new-best")).toBeNull();
+
+    run(":wq");
+    expect(screenOf(root)).toBe("screen-home");
+    expect(localStorage.getItem("hjkl:bestTimeMs")).toBe("1");
+  });
+
+  it(":q! returns home without saving, even on a new best", () => {
+    const root = load();
+    startHjkl();
+    playToCompletion(root);
     expect(root.querySelector(".new-best")).not.toBeNull();
 
-    click(root, ".retry-button");
+    run(":q!");
+    expect(screenOf(root)).toBe("screen-home");
+    expect(localStorage.getItem("hjkl:bestTimeMs")).toBeNull();
+  });
+
+  it("shows the stored best time alongside the run", () => {
+    localStorage.setItem("hjkl:bestTimeMs", "14320");
+    const root = load();
+    startHjkl();
+    playToCompletion(root);
+    expect(textOf(root, ".best-time")).toBe("Best time: 14.32s");
+  });
+
+  it("shows no best time when the player has none yet", () => {
+    const root = load();
+    startHjkl();
+    playToCompletion(root);
+    expect(root.querySelector(".best-time")).toBeNull();
+  });
+
+  it("shows a hint explaining :wq and :q!", () => {
+    const root = load();
+    startHjkl();
+    playToCompletion(root);
+    expect(textOf(root, ".hint")).toBe(":wq save & quit · :q! quit without saving");
+  });
+
+  it.each([":q", ":w", ":x", "wq"])("%s shows an error naming :wq and :q!, and stays on results", (command) => {
+    const root = load();
+    startHjkl();
+    playToCompletion(root);
+    run(command);
+    expect(textOf(root, ".error")).toBe(`${command} isn't supported in argot (use :wq or :q!)`);
+    expect(textOf(root, ".command-line")).toBe("");
+    expect(screenOf(root)).toBe("screen-results");
+  });
+
+  it("Esc discards what's typed but keeps the command line open, so the player can still leave", () => {
+    const root = load();
+    startHjkl();
+    playToCompletion(root);
+    type(":x");
+    press("Escape");
+    expect(textOf(root, ".command-line")).toBe("");
+
+    run(":q!");
+    expect(screenOf(root)).toBe("screen-home");
+  });
+
+  it("doesn't save the best time just by finishing", () => {
+    const root = load();
+    startHjkl();
+    playToCompletion(root);
+    expect(root.querySelector(".new-best")).not.toBeNull();
+
+    const reloaded = load();
+    run("vim hjkl");
+    expect(reloaded.querySelector(".best-time")).toBeNull();
+  });
+});
+
+describe("full flow", () => {
+  it("runs Home → Splash → Drill → Results → Home → Splash → Drill", () => {
+    const root = load();
+    startHjkl();
+    playToCompletion(root);
+    expect(screenOf(root)).toBe("screen-results");
+
+    run(":q!");
+    expect(screenOf(root)).toBe("screen-home");
+
+    startHjkl();
     expect(screenOf(root)).toBe("screen-drill");
     expect(textOf(root, ".progress")).toBe(`0/${WIN_TOUCHES}`);
     expect(textOf(root, ".timer")).toBe("0.00s");
@@ -387,11 +480,14 @@ describe("full flow", () => {
     expect(screenOf(root)).toBe("screen-results");
   });
 
-  it("shows the best time on the splash after a finished run", () => {
+  it(":wq on a new best saves it and returns home, and it survives a reload", () => {
     const first = load();
     startHjkl();
     playToCompletion(first);
     const finalTime = textOf(first, ".final-time");
+
+    run(":wq");
+    expect(screenOf(first)).toBe("screen-home");
 
     const reloaded = load();
     run("vim hjkl");

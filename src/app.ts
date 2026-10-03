@@ -19,7 +19,8 @@ export function mountApp(root: HTMLElement): void {
 
   function renderGame(): void {
     if (!game) return;
-    game.container.classList.toggle("game-greyed", game.command !== null);
+    // Greying pulls attention from play to the command line; results has no play to dim.
+    game.container.classList.toggle("game-greyed", game.command !== null && game.screen !== "results");
     renderGameBar(game.bar, game.screen, game.command, game.error);
   }
 
@@ -36,6 +37,8 @@ export function mountApp(root: HTMLElement): void {
     game = running;
     running.session = games.get(name)!(running.container, (screen) => {
       running.screen = screen;
+      // Results has nothing to play, so it opens straight onto the command line.
+      if (screen === "results") running.command = "";
       renderGame();
     });
   }
@@ -68,6 +71,10 @@ export function mountApp(root: HTMLElement): void {
       if (event.key !== "Escape" || game.screen === "results") return;
       game.command = "";
       game.session?.setKeysEnabled(false);
+    } else if (event.key === "Escape" && game.screen === "results") {
+      // Results has no game to go back to, so Esc only clears the line.
+      game.command = "";
+      game.error = null;
     } else if (event.key === "Escape") {
       game.command = null;
       game.error = null;
@@ -78,7 +85,13 @@ export function mountApp(root: HTMLElement): void {
         quitGame(game);
         return;
       }
-      game.error = `${game.command} isn't supported in argot (use :q! to quit)`;
+      if (game.command === ":wq" && game.screen === "results") {
+        game.session?.save();
+        quitGame(game);
+        return;
+      }
+      const supported = game.screen === "results" ? "use :wq or :q!" : "use :q! to quit";
+      game.error = `${game.command} isn't supported in argot (${supported})`;
       game.command = "";
     } else if (event.key === "Backspace") {
       game.command = game.command.slice(0, -1);

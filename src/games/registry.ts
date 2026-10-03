@@ -7,6 +7,8 @@ export type GameScreen = "splash" | "play" | "results";
 export interface GameSession {
   /** While disabled the game ignores every key, but its clock keeps running. */
   setKeysEnabled(enabled: boolean): void;
+  /** Saves the finished run shown on results, if it's a new best. Does nothing elsewhere. */
+  save(): void;
   /** Stops the game for good: no more keys, frames or saves. */
   destroy(): void;
 }

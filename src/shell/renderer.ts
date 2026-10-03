@@ -30,7 +30,12 @@ export function renderGameBar(
   command: string | null,
   error: string | null,
 ): void {
-  const hint = command !== null ? "type :q! to quit" : GAME_HINTS[screen];
+  const hint =
+    screen === "results"
+      ? ":wq save &amp; quit · :q! quit without saving"
+      : command !== null
+        ? "type :q! to quit"
+        : GAME_HINTS[screen];
   bar.innerHTML = `
     ${command !== null ? `<p class="command-line">${escapeHtml(command)}</p>` : ""}
     ${
