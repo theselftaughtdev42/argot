@@ -1,15 +1,15 @@
 # argot
 
-argot teaches vim by playing short games in a terminal-like shell, using the keyboard only.
+argot builds vim muscle memory through short, timed drills in a terminal-like shell, using the keyboard only.
 
 ## People
 
 **Visitor**:
-Someone using argot, especially on home before they've launched a game.
+Someone using argot, especially on home before they've launched a drill.
 _Avoid_: User
 
 **Player**:
-A visitor who is in a game.
+A visitor who is in a drill.
 _Avoid_: User. Also don't use it for the thing moved on the board (that's the **Cursor**).
 
 ## Home
@@ -29,23 +29,21 @@ What's typed at the prompt (e.g. `ls`, `vim hjkl`) or on the command line (e.g. 
 The short line telling the visitor or player what to type next.
 _Avoid_: Help, tip
 
-## Games
-
-**Game**:
-Something a visitor can launch from home with `vim <name>`.
+## Drills
 
 **Drill**:
-A kind of game that practises one vim skill against the clock. hjkl is a drill.
-_Avoid_: Using it for the play screen
+A timed exercise that repeats one vim skill until it becomes muscle memory, launched from home with `vim <name>`. hjkl is a drill.
+_Avoid_: Game, exercise, lesson
 
-**Game frame**:
-The in-game layout: the stage, with the statusline and command line pinned beneath it.
+**Drill frame**:
+The layout while a drill is open: the stage, with the statusline and command line pinned beneath it.
+_Avoid_: Game frame
 
 **Stage**:
-The part of the game frame that the game draws in.
+The part of the drill frame that the drill draws in.
 
 **Statusline**:
-The bar under the stage showing the mode and the game's name.
+The bar under the stage showing the mode and the drill's name.
 _Avoid_: Status bar
 
 **Command line**:
@@ -53,12 +51,11 @@ The line under the statusline that opens with Esc, where the player types `:q!` 
 _Avoid_: Prompt (that's home's), cmdline
 
 **Instructions Page**:
-A game's first screen, explaining the task and waiting for Enter to start.
+A drill's first screen, explaining the task and waiting for Enter to start.
 _Avoid_: Splash, landing
 
 **Play screen**:
 The screen where the player is doing the drill and the clock is running.
-_Avoid_: Drill (that's a kind of game)
 
 **Results screen**:
 The screen after a run ends, showing the final time and whether it's a new best.
