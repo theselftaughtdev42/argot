@@ -520,3 +520,14 @@ describe("loading the site", () => {
     expect(screenOf(load())).toBe("screen-home");
   });
 });
+
+describe("key routing", () => {
+  it("keeps a single keydown listener, the shell's, through a whole game", () => {
+    const root = load();
+    const keydownListeners = () => listeners.filter(([type]) => type === "keydown").length;
+    run("vim hjkl");
+    press("Enter");
+    playToCompletion(root);
+    expect(keydownListeners()).toBe(1);
+  });
+});
