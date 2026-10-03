@@ -1,0 +1,35 @@
+/* Dusk — argot's default theme.
+   Only tokens live here. Components live in ../argot.css and read these tokens only. */
+[data-theme="dusk"] {
+  /* type */
+  --ag-font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --ag-weight-bold: 700;
+
+  /* surfaces + text */
+  --ag-bg: #1a1b26;
+  --ag-fg: #c0caf5;
+  --ag-fg-muted: #737aa2;
+  --ag-text-glow: none;
+
+  /* accents */
+  --ag-accent: #7aa2f7;      /* game names, player cursor */
+  --ag-highlight: #e0af68;   /* keys/commands in hints, logo colon */
+  --ag-prompt: #9ece6a;      /* shell prompt symbol */
+  --ag-target: #f7768e;      /* in-game target */
+  --ag-error: #f7768e;       /* shell and command-line errors */
+
+  /* cursor */
+  --ag-cursor: #c0caf5;
+
+  /* game board */
+  --ag-board-dot: #3b4261;
+
+  /* vim statusline */
+  --ag-statusline-bg: #1f2335;
+  --ag-statusline-fg: #c0caf5;
+  --ag-mode-bg: #7aa2f7;
+  --ag-mode-fg: #16161e;
+
+  /* glyphs */
+  --ag-prompt-symbol: "❯ ";
+}

@@ -1,0 +1,334 @@
+/* argot — theme-agnostic styles.
+   Every colour/font comes from --ag-* tokens defined by a theme file
+   (themes/<name>.css), selected via <html data-theme="<name>">. */
+
+html, body {
+  margin: 0;
+  background: var(--ag-bg);
+  color: var(--ag-fg);
+  font-family: var(--ag-font-mono);
+}
+
+/* ---------- screens ---------- */
+
+.ag-screen {
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: 48px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  line-height: 1.7;
+  text-shadow: var(--ag-text-glow);
+}
+
+.ag-stack {
+  width: 100%;
+  max-width: 760px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+.ag-stack--narrow { max-width: 560px; gap: 40px; }
+
+/* ---------- logo ---------- */
+
+.ag-logo {
+  margin: 0;
+  font-size: 64px;
+  line-height: 1;
+  font-weight: var(--ag-weight-bold);
+  letter-spacing: -0.02em;
+  color: var(--ag-fg);
+}
+.ag-logo::before {
+  content: ":";
+  color: var(--ag-highlight);
+}
+.ag-tagline { color: var(--ag-fg-muted); margin-top: 10px; }
+
+/* ---------- text helpers ---------- */
+
+.ag-muted { color: var(--ag-fg-muted); }
+.ag-key { color: var(--ag-highlight); font-weight: var(--ag-weight-bold); }
+
+/* ---------- shell ---------- */
+
+.ag-line { white-space: pre-wrap; word-break: break-word; }
+
+.ag-prompt::before {
+  content: var(--ag-prompt-symbol);
+  color: var(--ag-prompt);
+  font-weight: var(--ag-weight-bold);
+}
+
+.ag-cursor {
+  display: inline-block;
+  width: 0.6em;
+  height: 1.2em;
+  vertical-align: text-bottom;
+  background: var(--ag-cursor);
+  animation: ag-blink 1s steps(1) infinite;
+}
+.ag-cursor--still { animation: none; }
+
+@keyframes ag-blink { 50% { opacity: 0; } }
+
+/* `ls` output: horizontal, wraps like a real terminal */
+.ag-ls {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 28px;
+  row-gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--ag-accent);
+  font-weight: var(--ag-weight-bold);
+}
+
+/* ---------- game ---------- */
+
+.ag-game {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-size: 20px;
+  line-height: 1.7;
+  text-shadow: var(--ag-text-glow);
+}
+.ag-game__stage {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  padding: 48px 16px;
+}
+
+.ag-board {
+  margin: 0;
+  white-space: pre;
+  font-family: inherit;
+  font-size: 28px;
+  line-height: 1.6;
+  color: var(--ag-board-dot);
+}
+.ag-board__player { color: var(--ag-accent); }
+.ag-board__target { color: var(--ag-target); font-weight: var(--ag-weight-bold); }
+
+.ag-statusline {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  background: var(--ag-statusline-bg);
+  color: var(--ag-statusline-fg);
+  font-size: 15px;
+  text-shadow: none;
+}
+.ag-statusline > * { padding: 2px 12px; }
+.ag-mode {
+  background: var(--ag-mode-bg);
+  color: var(--ag-mode-fg);
+  font-weight: var(--ag-weight-bold);
+}
+
+.ag-cmdline {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 12px 12px;
+  font-size: 18px;
+  min-height: 1.7em;
+}
+
+/* ---------- current screens ----------
+   The markup the screens render today, restyled with tokens. These rules go
+   as each screen moves onto the ag-* components above. */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#app {
+  width: 100%;
+  max-width: 640px;
+  padding: 2rem;
+}
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  text-align: center;
+}
+
+h1 {
+  margin: 0;
+  letter-spacing: 0.05em;
+  font-weight: var(--ag-weight-bold);
+}
+
+kbd {
+  border: 1px solid var(--ag-board-dot);
+  border-radius: 4px;
+  padding: 0.1em 0.4em;
+  font-family: inherit;
+  color: var(--ag-highlight);
+  font-weight: var(--ag-weight-bold);
+}
+
+.instructions {
+  max-width: 32em;
+}
+
+.key-legend {
+  list-style: none;
+  display: flex;
+  gap: 1.5rem;
+  padding: 0;
+  margin: 0;
+  color: var(--ag-fg-muted);
+}
+
+.goal {
+  color: var(--ag-fg-muted);
+  max-width: 32em;
+}
+
+.best-time strong,
+.new-best {
+  color: var(--ag-highlight);
+}
+
+.screen-home {
+  align-items: flex-start;
+  text-align: left;
+  gap: 0.5rem;
+}
+
+.screen-home pre,
+.prompt {
+  margin: 0;
+  font-family: inherit;
+  white-space: pre-wrap;
+}
+
+.screen-home .output {
+  color: var(--ag-accent);
+  font-weight: var(--ag-weight-bold);
+}
+
+.prompt-sign {
+  color: var(--ag-prompt);
+  font-weight: var(--ag-weight-bold);
+}
+
+.prompt-input::after,
+.command-line::after {
+  content: "";
+  display: inline-block;
+  width: 0.6em;
+  height: 1.1em;
+  vertical-align: text-bottom;
+  background: var(--ag-cursor);
+}
+
+.error {
+  color: var(--ag-error);
+}
+
+.game {
+  transition: opacity 0.15s, filter 0.15s;
+}
+
+.game-greyed {
+  opacity: 0.35;
+  filter: grayscale(1);
+}
+
+.shell-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 1.5rem;
+  min-height: 2.5rem;
+  text-align: left;
+}
+
+.shell-bar p {
+  margin: 0;
+}
+
+.shell-bar .error {
+  font-size: 0.875rem;
+}
+
+.command-line {
+  white-space: pre;
+}
+
+.hint {
+  margin: 0;
+  color: var(--ag-fg-muted);
+  font-size: 0.875rem;
+}
+
+.hud {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  font-size: 1.25rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(var(--grid-size), 1fr);
+  grid-template-rows: repeat(var(--grid-size), 1fr);
+  gap: 2px;
+  background: var(--ag-board-dot);
+  border: 2px solid var(--ag-board-dot);
+  width: min(90vw, 420px);
+  aspect-ratio: 1;
+}
+
+.cell {
+  background: var(--ag-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(0.8rem, 2.5vw, 1.1rem);
+}
+
+.cell-cursor {
+  color: var(--ag-accent);
+  font-weight: var(--ag-weight-bold);
+}
+
+.cell-target {
+  color: var(--ag-target);
+  font-weight: var(--ag-weight-bold);
+}
+
+.final-time {
+  font-size: 2rem;
+  margin: 0;
+}
+
+/* ---------- accessibility ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .ag-cursor { animation: none; }
+}
