@@ -1,7 +1,7 @@
 import "./style.css";
-import { mountHjklGame } from "./games/hjkl/app";
+import { mountApp } from "./app";
 
 const root = document.querySelector<HTMLDivElement>("#app");
 if (root) {
-  mountHjklGame(root);
+  mountApp(root);
 }
