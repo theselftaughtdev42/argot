@@ -50,9 +50,9 @@ _Avoid_: Status bar
 The line under the statusline that opens with Esc, where the player types `:q!` or `:wq`.
 _Avoid_: Prompt (that's home's), cmdline
 
-**Instructions Page**:
+**Instructions screen**:
 A drill's first screen, explaining the task and waiting for Enter to start.
-_Avoid_: Splash, landing
+_Avoid_: Splash, landing, instructions page
 
 **Play screen**:
 The screen where the player is doing the drill and the clock is running.
