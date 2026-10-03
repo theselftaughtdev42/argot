@@ -286,17 +286,12 @@ describe("hjkl splash", () => {
     expect(root.querySelector("button")).toBeNull();
   });
 
-  it("shows no best time before the player has one", () => {
-    const root = load();
-    run("vim hjkl");
-    expect(root.querySelector(".best-time")).toBeNull();
-  });
-
-  it("shows the stored best time", () => {
+  it("doesn't show the best time, even when the player has one", () => {
     localStorage.setItem("hjkl:bestTimeMs", "14320");
     const root = load();
     run("vim hjkl");
-    expect(textOf(root, ".best-time")).toBe("Best time: 14.32s");
+    expect(root.querySelector(".best-time")).toBeNull();
+    expect(root.textContent).not.toMatch(/best/i);
   });
 
   it("shows a hint that Enter starts the drill", () => {
@@ -704,7 +699,9 @@ describe("hjkl results", () => {
     expect(root.querySelector(".new-best")).not.toBeNull();
 
     const reloaded = load();
-    run("vim hjkl");
+    startHjkl();
+    playToCompletion(reloaded);
+    expect(reloaded.querySelector(".new-best")).not.toBeNull();
     expect(reloaded.querySelector(".best-time")).toBeNull();
   });
 });
@@ -738,7 +735,8 @@ describe("full flow", () => {
     expect(screenOf(first)).toBe("home");
 
     const reloaded = load();
-    run("vim hjkl");
+    startHjkl();
+    playToCompletion(reloaded);
     expect(textOf(reloaded, ".best-time")).toBe(`Best time: ${finalTime}`);
   });
 });

@@ -52,7 +52,7 @@ export function mountHjklGame(
   function showLanding(): void {
     screen = "landing";
     onScreenChange("splash");
-    renderLanding(root, getBestTime());
+    renderLanding(root);
   }
 
   showLanding();

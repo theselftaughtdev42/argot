@@ -7,7 +7,7 @@ function renderBestTime(bestTimeMs: number | null): string {
     : "";
 }
 
-export function renderLanding(root: HTMLElement, bestTimeMs: number | null): void {
+export function renderLanding(root: HTMLElement): void {
   root.innerHTML = `
     <section class="screen screen-landing ag-stack">
       <h1 class="ag-title">HJKL Drill</h1>
@@ -22,7 +22,6 @@ export function renderLanding(root: HTMLElement, bestTimeMs: number | null): voi
         <li><span class="ag-key">l</span> right</li>
       </ul>
       <p class="goal ag-muted">Hit ${WIN_TOUCHES} targets as fast as you can. Arrow keys do nothing here &mdash; only hjkl moves the cursor.</p>
-      ${renderBestTime(bestTimeMs)}
       <p class="hint ag-muted">press <span class="ag-key">Enter</span> to start</p>
     </section>
   `;
