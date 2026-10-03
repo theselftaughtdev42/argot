@@ -9,17 +9,23 @@ const KEY_TO_DIRECTION: Record<string, Direction> = {
 
 /**
  * Listens for hjkl keydowns and reports accepted moves. Ignores key-repeat
- * events (holding a key down) and every key that isn't h/j/k/l, including
- * the arrow keys.
+ * events (holding a key down), hjkl pressed with a modifier (so browser
+ * shortcuts like Ctrl/Cmd+L still work), and every key that isn't h/j/k/l,
+ * including the arrow keys.
  */
-export function createInputHandler(onMove: (direction: Direction) => void): () => void {
+export function createInputHandler(
+  onMove: (direction: Direction) => void,
+  target: EventTarget = window,
+): () => void {
   function handleKeydown(event: KeyboardEvent): void {
     if (event.repeat) return;
+    if (event.ctrlKey || event.metaKey || event.altKey) return;
     const direction = KEY_TO_DIRECTION[event.key];
     if (!direction) return;
     onMove(direction);
   }
 
-  window.addEventListener("keydown", handleKeydown);
-  return () => window.removeEventListener("keydown", handleKeydown);
+  const listener = handleKeydown as EventListener;
+  target.addEventListener("keydown", listener);
+  return () => target.removeEventListener("keydown", listener);
 }
