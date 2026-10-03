@@ -78,7 +78,6 @@ export function renderResults(
 ): void {
   root.innerHTML = `
     <section class="screen screen-results ag-stack ag-stack--center">
-      <h1 class="ag-title">Done!</h1>
       <p class="final-time ag-hero">${formatTime(finalTimeMs)}</p>
       ${isNewBest ? '<p class="new-best ag-highlight">New best time!</p>' : ""}
       ${renderBestTime(bestTimeMs)}
