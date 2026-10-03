@@ -63,6 +63,19 @@ describe("best-time storage", () => {
     expect(getBestTime()).toBe(12000);
   });
 
+  it("checks whether a run would be a new best without saving it", async () => {
+    const { getBestTime, isNewBest, saveBestTimeIfBetter } = await loadStorage();
+    expect(isNewBest(14320)).toBe(true);
+    expect(getBestTime()).toBeNull();
+    expect(backing.size).toBe(0);
+
+    saveBestTimeIfBetter(14320);
+    expect(isNewBest(12000)).toBe(true);
+    expect(isNewBest(14320)).toBe(false);
+    expect(isNewBest(15000)).toBe(false);
+    expect(getBestTime()).toBe(14320);
+  });
+
   it("survives a page reload", async () => {
     const before = await loadStorage();
     before.saveBestTimeIfBetter(14320);

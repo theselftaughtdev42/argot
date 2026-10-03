@@ -1,7 +1,7 @@
 import { createGame, move, type Direction, type GameState } from "./engine";
 import { createInputHandler } from "./input";
 import { Timer } from "./timer";
-import { getBestTime, saveBestTimeIfBetter } from "./storage";
+import { getBestTime, isNewBest as wouldBeNewBest, saveBestTimeIfBetter } from "./storage";
 import { renderLanding, renderDrill, renderResults } from "./renderer";
 import type { GameScreen, GameSession } from "../registry";
 
@@ -40,10 +40,10 @@ export function mountHjklGame(
       cancelAnimationFrame(animationFrame);
       teardownInput();
       finalTimeMs = timer.elapsedMs();
-      isNewBest = saveBestTimeIfBetter(finalTimeMs);
+      isNewBest = wouldBeNewBest(finalTimeMs);
       screen = "results";
       onScreenChange("results");
-      renderResults(root, finalTimeMs, isNewBest, startDrill);
+      renderResults(root, finalTimeMs, isNewBest, getBestTime());
     }
   }
 
@@ -77,6 +77,9 @@ export function mountHjklGame(
   return {
     setKeysEnabled(enabled) {
       keysEnabled = enabled;
+    },
+    save() {
+      if (screen === "results") saveBestTimeIfBetter(finalTimeMs);
     },
     destroy() {
       cancelAnimationFrame(animationFrame);

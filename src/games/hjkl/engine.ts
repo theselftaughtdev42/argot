@@ -1,6 +1,16 @@
 export const GRID_SIZE = 10;
-export const WIN_TOUCHES = 15;
+export const WIN_TOUCHES = devTargetOverride() ?? 15;
 export const MIN_SPAWN_DISTANCE = 5;
+
+/**
+ * Dev-only: set VITE_HJKL_TARGETS (e.g. in .env.local) to shorten drills while
+ * running `pnpm dev`. Ignored in builds and tests.
+ */
+function devTargetOverride(): number | null {
+  if (import.meta.env.MODE !== "development") return null;
+  const targets = Number(import.meta.env.VITE_HJKL_TARGETS);
+  return Number.isInteger(targets) && targets > 0 ? targets : null;
+}
 
 export type Direction = "h" | "j" | "k" | "l";
 export type GameStatus = "idle" | "playing" | "complete";
