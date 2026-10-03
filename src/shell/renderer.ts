@@ -1,18 +1,48 @@
 import type { GameScreen } from "../games/registry";
 
-export type ShellOutput = { kind: "output" | "error"; text: string };
+export type ShellOutput = { kind: "list"; items: string[] } | { kind: "error"; text: string };
+
+export type HomeState = {
+  /** What's typed at the prompt. */
+  input: string;
+  /** The last submitted command's name and what it printed; null when there's nothing to show. */
+  last: { name: string; output: ShellOutput } | null;
+  /** Whether the logo has shrunk to the top of the page, leaving the tagline behind. */
+  compact: boolean;
+};
 
 function escapeHtml(text: string): string {
   return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-export function renderHome(root: HTMLElement, input: string, output: ShellOutput | null): void {
+function renderOutput(output: ShellOutput): string {
+  if (output.kind === "error") return `<div class="ag-line ag-error">${escapeHtml(output.text)}</div>`;
+  return `<ul class="ag-ls">${output.items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
+}
+
+export function renderHome(root: HTMLElement, { input, last, compact }: HomeState): void {
+  const hint =
+    last?.name === "ls"
+      ? `type <span class="ag-key">vim</span> and a game name`
+      : `type <span class="ag-key">ls</span> and press <span class="ag-key">enter</span>`;
+  const brand = `
+    <header class="ag-brand${compact ? " ag-brand--compact" : ""}">
+      <h1 class="ag-logo">argot</h1>
+      ${compact ? "" : `<div class="ag-tagline">learn to speak vim. no mouse, just keys.</div>`}
+    </header>
+  `;
   root.innerHTML = `
-    <section class="screen screen-home">
-      ${output ? `<pre class="${output.kind}">${escapeHtml(output.text)}</pre>` : ""}
-      <p class="prompt"><span class="prompt-sign">$</span> <span class="prompt-input">${escapeHtml(input)}</span></p>
-      <p class="hint">type ls to list games</p>
-    </section>
+    <main class="ag-screen ag-home${compact ? " ag-home--compact" : ""}">
+      ${compact ? brand : ""}
+      <div class="ag-stack${compact ? "" : " ag-stack--narrow"}">
+        ${compact ? "" : brand}
+        ${last ? renderOutput(last.output) : ""}
+        <div>
+          <div class="ag-line ag-prompt"><span class="prompt-input">${escapeHtml(input)}</span><span class="ag-cursor"></span></div>
+          <div class="ag-hint home-hint">${hint}</div>
+        </div>
+      </div>
+    </main>
   `;
 }
 
