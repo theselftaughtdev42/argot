@@ -71,8 +71,11 @@ function hintKeys(root: HTMLElement): string[] {
   return [...root.querySelectorAll(".cmdline-hint .ag-key")].map((key) => key.textContent!);
 }
 
+const PLAYER = ".ag-board__player";
+const TARGET = ".ag-board__target";
+
 function cellIndex(root: HTMLElement, selector: string): number {
-  return [...root.querySelectorAll(".cell")].findIndex((cell) => cell.matches(selector));
+  return [...root.querySelectorAll(".board-cell")].findIndex((cell) => cell.matches(selector));
 }
 
 /** Launches hjkl from home and starts the drill, as a player would. */
@@ -83,8 +86,8 @@ function startHjkl(): void {
 
 /** The hjkl key that would move the cursor one step toward the target. */
 function keyTowardTarget(root: HTMLElement): string {
-  const cursor = cellIndex(root, ".cell-cursor");
-  const target = cellIndex(root, ".cell-target");
+  const cursor = cellIndex(root, PLAYER);
+  const target = cellIndex(root, TARGET);
   const dx = (target % GRID_SIZE) - (cursor % GRID_SIZE);
   const dy = Math.floor(target / GRID_SIZE) - Math.floor(cursor / GRID_SIZE);
   return dx < 0 ? "h" : dx > 0 ? "l" : dy < 0 ? "k" : "j";
@@ -300,6 +303,7 @@ describe("hjkl splash", () => {
     const root = load();
     run("vim hjkl");
     expect(textOf(root, ".hint")).toBe("press Enter to start");
+    expect(textOf(root, ".hint .ag-key")).toBe("Enter");
   });
 
   it("ignores hjkl until Enter is pressed", () => {
@@ -316,6 +320,62 @@ describe("hjkl splash", () => {
     expect(screenOf(root)).toBe("screen-drill");
     expect(textOf(root, ".progress")).toBe(`0/${WIN_TOUCHES}`);
     expect(textOf(root, ".timer")).toBe("0.00s");
+  });
+});
+
+describe("hjkl drill", () => {
+  it("asks the player to reach the ✕ using h j k l", () => {
+    const root = load();
+    startHjkl();
+    const instructions = root.querySelector(".ag-drill > :first-child")!;
+    expect(instructions.textContent).toBe("reach the ✕ using h j k l");
+    expect(instructions.querySelector(".ag-key")!.textContent).toBe("h j k l");
+  });
+
+  it("draws the board as rows of dots, with one player cursor and one ✕ target", () => {
+    const root = load();
+    startHjkl();
+    const board = root.querySelector(".ag-board")!;
+    const rows = board.textContent!.split("\n");
+    expect(rows).toHaveLength(GRID_SIZE);
+    expect(board.querySelectorAll(".board-cell")).toHaveLength(GRID_SIZE * GRID_SIZE);
+    expect(board.querySelectorAll(`${PLAYER}.ag-cursor`)).toHaveLength(1);
+    expect([...board.querySelectorAll(TARGET)].map((target) => target.textContent)).toEqual(["✕"]);
+    const dots = [...board.querySelectorAll(".board-cell")].filter((cell) => cell.textContent === "·");
+    expect(dots).toHaveLength(GRID_SIZE * GRID_SIZE - 2);
+  });
+
+  it("shows the timer and progress beneath the board", () => {
+    const root = load();
+    startHjkl();
+    const board = root.querySelector(".ag-board")!;
+    for (const selector of [".timer", ".progress"]) {
+      const info = root.querySelector(selector)!;
+      expect(board.compareDocumentPosition(info) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(board.contains(info)).toBe(false);
+    }
+  });
+
+  it("updates the timer and progress as the player moves", () => {
+    const root = load();
+    startHjkl();
+    stepTowardTarget(root);
+    vi.advanceTimersByTime(1500);
+    expect(parseFloat(textOf(root, ".timer")!)).toBeGreaterThanOrEqual(1.5);
+
+    while (textOf(root, ".progress") === `0/${WIN_TOUCHES}`) stepTowardTarget(root);
+    expect(textOf(root, ".progress")).toBe(`1/${WIN_TOUCHES}`);
+  });
+
+  it("keeps the player cursor in the stage that greys while the command line is open", () => {
+    const root = load();
+    startHjkl();
+    const player = () => root.querySelector(`${PLAYER}.ag-cursor`)!;
+    expect(player().closest(".game-greyed")).toBeNull();
+    press("Escape");
+    expect(player().closest(".game-greyed")).not.toBeNull();
+    press("Escape");
+    expect(player().closest(".game-greyed")).toBeNull();
   });
 });
 
@@ -453,11 +513,11 @@ describe("command mode in the drill", () => {
   it("hjkl type on the command line instead of moving the cursor", () => {
     const root = load();
     startHjkl();
-    const start = cellIndex(root, ".cell-cursor");
+    const start = cellIndex(root, PLAYER);
     const key = keyTowardTarget(root);
     press("Escape");
     press(key);
-    expect(cellIndex(root, ".cell-cursor")).toBe(start);
+    expect(cellIndex(root, PLAYER)).toBe(start);
     expect(textOf(root, ".cmdline-input")).toBe(key);
   });
 
@@ -474,17 +534,17 @@ describe("command mode in the drill", () => {
     const root = load();
     startHjkl();
     stepTowardTarget(root);
-    const cursor = cellIndex(root, ".cell-cursor");
+    const cursor = cellIndex(root, PLAYER);
     press("Escape");
     type(":q");
     press("Escape");
     expect(root.querySelector(".game-greyed")).toBeNull();
     expect(root.querySelector(".cmdline-input")).toBeNull();
     expect(textOf(root, ".cmdline-hint")).toBe(PLAY_HINT);
-    expect(cellIndex(root, ".cell-cursor")).toBe(cursor);
+    expect(cellIndex(root, PLAYER)).toBe(cursor);
 
     stepTowardTarget(root);
-    expect(cellIndex(root, ".cell-cursor")).not.toBe(cursor);
+    expect(cellIndex(root, PLAYER)).not.toBe(cursor);
   });
 
   it(":q! abandons the run and returns home without touching the best time", () => {
@@ -544,11 +604,11 @@ describe("command mode in the drill", () => {
   it("ignores held-down and Ctrl/Cmd/Alt-modified hjkl", () => {
     const root = load();
     startHjkl();
-    const start = cellIndex(root, ".cell-cursor");
+    const start = cellIndex(root, PLAYER);
     for (const key of "hjkl") {
       for (const init of [{ repeat: true }, { ctrlKey: true }, { metaKey: true }, { altKey: true }]) {
         press(key, init);
-        expect(cellIndex(root, ".cell-cursor")).toBe(start);
+        expect(cellIndex(root, PLAYER)).toBe(start);
       }
     }
   });
