@@ -4,6 +4,7 @@ import { renderCommandLine, renderDrillFrame, renderHome, type HomeState, type S
 
 type RunningDrill = {
   session: DrillSession | null;
+  frame: HTMLElement;
   container: HTMLElement;
   cmdline: HTMLElement;
   screen: DrillScreen;
@@ -19,14 +20,17 @@ export function mountApp(root: HTMLElement): void {
 
   function renderDrill(): void {
     if (!drill) return;
+    // Instructions stand alone until the player reaches for the command line.
+    drill.frame.classList.toggle("ag-drill--bare", drill.command === null && drill.screen === "instructions");
     // Greying pulls attention from play to the command line; results has no play to dim.
     drill.container.classList.toggle("drill-greyed", drill.command !== null && drill.screen !== "results");
     renderCommandLine(drill.cmdline, drill.screen, drill.command, drill.error);
   }
 
   function launchDrill(name: string): void {
-    const { stage, cmdline } = renderDrillFrame(root, name);
+    const { frame, stage, cmdline } = renderDrillFrame(root, name);
     const running: RunningDrill = {
+      frame,
       container: stage,
       cmdline,
       session: null,

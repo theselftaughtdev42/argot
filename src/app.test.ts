@@ -401,12 +401,9 @@ describe("drill frame", () => {
     expect(textOf(root, ".ag-mode")).toBe("TMP");
   });
 
-  it.each([
-    ["instructions", () => run("vim hjkl")],
-    ["play", startHjkl],
-  ])("on %s with the command line closed, hints at Esc then :q! to go home without saving", (_screen, open) => {
+  it("on play with the command line closed, hints at Esc then :q! to go home without saving", () => {
     const root = load();
-    open();
+    startHjkl();
     expect(textOf(root, ".cmdline-hint")).toBe(PLAY_HINT);
     expect(hintKeys(root)).toEqual(["Esc", ":q!"]);
     expect(root.querySelector(".ag-cmdline .ag-cursor")).toBeNull();
@@ -445,6 +442,22 @@ describe("drill frame", () => {
 });
 
 describe("command mode on the instructions screen", () => {
+  it("shows only the instructions until Esc opens the command line", () => {
+    const root = load();
+    run("vim hjkl");
+    expect(root.querySelector(".ag-drill--bare")).not.toBeNull();
+    press("Escape");
+    expect(root.querySelector(".ag-drill--bare")).toBeNull();
+    press("Escape");
+    expect(root.querySelector(".ag-drill--bare")).not.toBeNull();
+  });
+
+  it("shows the statusline and command line once a run starts", () => {
+    const root = load();
+    startHjkl();
+    expect(root.querySelector(".ag-drill--bare")).toBeNull();
+  });
+
   it("Esc greys the instructions screen and opens the command line", () => {
     const root = load();
     run("vim hjkl");
