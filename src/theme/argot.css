@@ -121,6 +121,13 @@ html, body {
   line-height: 1.7;
   text-shadow: var(--ag-text-glow);
 }
+/* statusline and command line sit in the same centred column as home */
+.ag-statusline,
+.ag-cmdline {
+  width: 100%;
+  max-width: 760px;
+  margin-inline: auto;
+}
 .ag-drill__stage {
   flex-grow: 1;
   display: flex;
