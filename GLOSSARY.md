@@ -23,7 +23,11 @@ The `❯` line on home where the visitor types commands.
 _Avoid_: Input, terminal
 
 **Command**:
-What's typed at the prompt (e.g. `ls`, `vim hjkl`) or on the command line (e.g. `:help`, `:q`, `:q!`, `:wq`).
+What's typed at the prompt (e.g. `ls`, `vim hjkl`) or on the command line (e.g. `:help`, `:q`, `:q!`, `:wq`). Each screen has its own set of commands. `argot` (or `:argot`) works everywhere and lists the commands available on the current screen.
+
+**Command response**:
+What a command shows after it runs: one line, like an error, or several, like `argot`'s list. On the command line, a response that takes several lines grows upward over the stage.
+_Avoid_: Output, message
 
 **Hint**:
 The short line telling the visitor or player what to type next. On the play screen it points at `:help` for instructions, and on the help page at `:q` back to the drill.
@@ -47,7 +51,7 @@ The bar under the stage showing the mode and the drill's name.
 _Avoid_: Status bar
 
 **Command line**:
-The line under the statusline that opens with Esc, where the player types `:help`, `:q`, `:q!` or `:wq`. `:q` only quits when there's nothing to lose (before the first move, or from the help page); otherwise it shows an E37 error naming `:q!` or `:wq`.
+The line under the statusline that opens with Esc, where the player types `:help`, `:q`, `:q!`, `:wq` or `argot`. While it's open, the stage is greyed. `:q` only quits when there's nothing to lose (before the first move, or from the help page); otherwise it shows an E37 error naming `:q!` or `:wq`.
 _Avoid_: Prompt (that's home's), cmdline
 
 **Help page**:
