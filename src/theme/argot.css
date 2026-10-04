@@ -90,6 +90,16 @@ html, body {
 
 @keyframes ag-blink { 50% { opacity: 0; } }
 
+/* `argot`'s list: each command's usage beside what it does */
+.ag-commands {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  column-gap: 3ch;
+  margin: 0;
+}
+.ag-commands > div { display: contents; }
+.ag-commands dd { margin: 0; }
+
 /* `ls` output: horizontal, wraps like a real terminal */
 .ag-ls {
   display: flex;
@@ -147,6 +157,9 @@ html, body {
 .ag-board__cursor { background: var(--ag-accent); }
 .ag-board__target { color: var(--ag-target); font-weight: var(--ag-weight-bold); }
 
+/* the statusline and command line; a multi-line command response grows up from here */
+.ag-drill__foot { position: relative; }
+
 .ag-statusline {
   display: flex;
   flex-wrap: wrap;
@@ -182,6 +195,18 @@ html, body {
   column-gap: 1ch;
 }
 .cmdline-hint__option + .cmdline-hint__option { margin-left: 5ch; }
+
+/* a command response of several lines covers the bottom of the stage, like
+   vim's multi-line messages, so the stage keeps its size */
+.cmdline-response {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 100%;
+  z-index: 1;
+  padding: 8px 12px;
+  background: var(--ag-bg);
+  border-top: 1px solid var(--ag-rule);
+}
 
 /* while the command line is open, the drill steps back so attention moves to it */
 .ag-drill__stage { transition: opacity 0.15s, filter 0.15s; }
