@@ -1,4 +1,7 @@
-import type { DrillScreen, Instructions } from "../drills/registry";
+import type { DrillScreen, Help } from "../drills/registry";
+
+/** What the drill frame can show in its stage: the drill's own screens, or the shell's help page. */
+export type FrameScreen = DrillScreen | "help";
 
 export type ShellOutput = { kind: "list"; items: string[] } | { kind: "error"; text: string };
 
@@ -48,13 +51,13 @@ export function renderHome(root: HTMLElement, { input, last, compact }: HomeStat
 
 /**
  * The shell's frame around a running drill, mounted once at launch: the stage
- * the drill owns, the statusline, and the command line. Returns the frame, the
- * stage and the command line for the shell to render into.
+ * the drill owns, the statusline, and the command line. Returns the frame's
+ * parts for the shell to render into.
  */
 export function renderDrillFrame(
   root: HTMLElement,
   name: string,
-): { frame: HTMLElement; stage: HTMLElement; cmdline: HTMLElement } {
+): { stage: HTMLElement; statusName: HTMLElement; cmdline: HTMLElement } {
   // TMP marks the mode as a placeholder until argot has real modes; Esc doesn't change it.
   root.innerHTML = `
     <main class="ag-drill">
@@ -66,11 +69,18 @@ export function renderDrillFrame(
     </main>
   `;
   return {
-    frame: root.querySelector<HTMLElement>(".ag-drill")!,
     stage: root.querySelector<HTMLElement>(".ag-drill__stage")!,
+    statusName: root.querySelector<HTMLElement>(".statusline-drill")!,
     cmdline: root.querySelector<HTMLElement>(".ag-cmdline")!,
   };
 }
+
+/** The statusline's name slot: the drill's name, or its help file's while help is open, like vim's. */
+export function renderStatusName(statusName: HTMLElement, name: string, screen: FrameScreen): void {
+  statusName.textContent = screen === "help" ? `${name}.txt [Help][RO]` : name;
+}
+
+const key = (text: string) => `<span class="ag-key">${text}</span>`;
 
 /**
  * The command line under a running drill: what's typed, with the cursor, while
@@ -78,17 +88,21 @@ export function renderDrillFrame(
  */
 export function renderCommandLine(
   cmdline: HTMLElement,
-  screen: DrillScreen,
+  screen: FrameScreen,
   command: string | null,
   error: string | null,
 ): void {
-  const esc = command === null ? `<span class="ag-key">Esc</span> then ` : "";
-  const hint =
+  const options =
     screen === "results"
-      ? `${esc}<span class="ag-key">:wq</span> save &amp; quit · <span class="ag-key">:q!</span> quit without saving`
-      : command !== null
-        ? `type <span class="ag-key">:q!</span> to quit`
-        : `<span class="ag-key">Esc</span> then <span class="ag-key">:q!</span> back to home without saving`;
+      ? [`${key(":wq")} save &amp; quit`, `${key(":q!")} quit without saving`]
+      : screen === "help"
+        ? [`${key(":q")} back to the drill`, `${key(":q!")} home`]
+        : [`${key(":help")} for instructions`, `${key(":q!")} back to home`];
+  // Each option is its own element, set well apart, so they read as separate choices.
+  const hint = [
+    ...(command === null ? [`<span class="cmdline-hint__lead">${key("Esc")} then</span>`] : []),
+    ...options.map((option) => `<span class="cmdline-hint__option">${option}</span>`),
+  ].join("");
   cmdline.innerHTML = `
     <span class="ag-line">${
       command !== null ? `<span class="cmdline-input">${escapeHtml(command)}</span><span class="ag-cursor"></span>` : ""
@@ -97,38 +111,36 @@ export function renderCommandLine(
   `;
 }
 
-/** A man page's prose, escaped, with each `key` in backticks highlighted as a key. */
-function renderManText(text: string): string {
-  return escapeHtml(text).replace(/`([^`]+)`/g, `<span class="ag-key">$1</span>`);
+/** A help page's prose, escaped, with each `key` in backticks highlighted as a key. */
+function renderHelpText(text: string): string {
+  return escapeHtml(text).replace(/`([^`]+)`/g, key("$1"));
 }
 
-function renderManSection(heading: string, body: string): string {
+/** Wide enough to fill the stage at any width; the overflow is clipped. */
+const RULE = "=".repeat(120);
+
+function renderHelpSection(name: string, heading: string, body: string): string {
+  const tag = `${name}-${heading.toLowerCase()}`;
   return `
-    <section class="ag-man__section">
-      <h2 class="ag-man__heading">${heading}</h2>
-      <div class="ag-man__body">${body}</div>
+    <section class="ag-help__section">
+      <div class="ag-help__rule" aria-hidden="true">${RULE}</div>
+      <h2 class="ag-help__heading"><span>${heading}</span><span class="ag-help__tag">*${escapeHtml(tag)}*</span></h2>
+      <div class="ag-help__body">${body}</div>
     </section>
   `;
 }
 
-/** A drill's instructions screen, laid out as a man page and waiting for Enter, or q to go home. */
-export function renderInstructions(root: HTMLElement, { name, summary, description, keys, goal }: Instructions): void {
-  const title = `${escapeHtml(name.toUpperCase())}(1)`;
+/** A drill's help page, laid out like a vim help file: its tag and summary, then DESCRIPTION, KEYS and GOAL. */
+export function renderHelp(root: HTMLElement, { name, summary, description, keys, goal }: Help): void {
   const keyRows = keys
     .map(({ keys, action }) => `<div><dt class="ag-key">${escapeHtml(keys)}</dt><dd>${escapeHtml(action)}</dd></div>`)
     .join("");
   root.innerHTML = `
-    <section class="screen screen-instructions ag-man">
-      <header class="ag-man__header"><span>${title}</span><span>Argot Drills Instructions</span><span>${title}</span></header>
-      ${renderManSection("NAME", `<strong>${escapeHtml(name)}</strong> — ${renderManText(summary)}`)}
-      ${renderManSection("DESCRIPTION", `<p>${renderManText(description)}</p>`)}
-      ${renderManSection("KEYS", `<dl class="ag-man__keys">${keyRows}</dl>`)}
-      ${renderManSection("GOAL", `<p>${renderManText(goal)}</p>`)}
-      <hr class="ag-man__rule">
-      <p class="hint ag-muted ag-man__actions">
-        <span>press <span class="ag-key">Enter</span> to start</span>
-        <span>press <span class="ag-key">q</span> to quit</span>
-      </p>
+    <section class="screen screen-help ag-help">
+      <p class="ag-help__title"><span class="ag-help__tag">*${escapeHtml(name)}.txt*</span><span>${renderHelpText(summary)}</span></p>
+      ${renderHelpSection(name, "DESCRIPTION", `<p>${renderHelpText(description)}</p>`)}
+      ${renderHelpSection(name, "KEYS", `<dl class="ag-help__keys">${keyRows}</dl>`)}
+      ${renderHelpSection(name, "GOAL", `<p>${renderHelpText(goal)}</p>`)}
     </section>
   `;
 }

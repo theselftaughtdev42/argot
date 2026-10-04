@@ -2,8 +2,7 @@ import { createRun, move, type Direction, type RunState } from "./engine";
 import { directionFor } from "./input";
 import { Timer } from "./timer";
 import { getBestTime, isNewBest as wouldBeNewBest, saveBestTimeIfBetter } from "./storage";
-import { instructions, renderPlay, renderElapsed, renderResults } from "./renderer";
-import { renderInstructions } from "../../shell/renderer";
+import { renderPlay, renderElapsed, renderResults } from "./renderer";
 import type { DrillScreen, DrillSession } from "../registry";
 
 export function mountHjklDrill(
@@ -11,7 +10,7 @@ export function mountHjklDrill(
   onScreenChange: (screen: DrillScreen) => void,
 ): DrillSession {
   let state: RunState = createRun();
-  let screen: DrillScreen = "instructions";
+  let screen: DrillScreen = "play";
   let finalTimeMs = 0;
   let isNewBest = false;
   let animationFrame = 0;
@@ -48,22 +47,16 @@ export function mountHjklDrill(
     animationFrame = requestAnimationFrame(tick);
   }
 
-  function showInstructions(): void {
-    screen = "instructions";
-    onScreenChange("instructions");
-    renderInstructions(root, instructions);
-  }
-
-  showInstructions();
+  startRun();
 
   return {
     handleKey(event) {
-      if (screen === "instructions" && event.key === "Enter" && !event.repeat) {
-        startRun();
-      } else if (screen === "play") {
-        const direction = directionFor(event);
-        if (direction) handleMove(direction);
-      }
+      if (screen !== "play") return;
+      const direction = directionFor(event);
+      if (direction) handleMove(direction);
+    },
+    hasStarted() {
+      return state.status !== "idle";
     },
     save() {
       if (screen === "results") saveBestTimeIfBetter(finalTimeMs);

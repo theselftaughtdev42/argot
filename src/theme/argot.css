@@ -175,10 +175,13 @@ html, body {
   font-size: 18px;
   min-height: 1.7em;
 }
-
-/* the bars are hidden rather than removed, so the stage doesn't shift when Esc brings them back */
-.ag-drill--bare .ag-statusline,
-.ag-drill--bare .ag-cmdline { visibility: hidden; }
+/* the hint's options are separate choices, so they sit apart rather than read as one sentence */
+.cmdline-hint {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 1ch;
+}
+.cmdline-hint__option + .cmdline-hint__option { margin-left: 5ch; }
 
 /* while the command line is open, the drill steps back so attention moves to it */
 .ag-drill__stage { transition: opacity 0.15s, filter 0.15s; }
@@ -189,10 +192,11 @@ html, body {
 /* ...and its cursor holds still, so only the command line's blinks */
 .drill-greyed .ag-cursor { animation: none; }
 
-/* every drill's instructions screen is a man page: a header line, then
-   uppercase headings over indented bodies, set smaller than play so the
-   whole page fits a laptop screen without scrolling */
-.ag-man {
+/* every drill's help page is laid out like a vim help file: a tagged first
+   line, then sections under full-width === rules, each heading with its tag
+   pushed right. Set smaller than play so the whole page fits a laptop screen
+   without scrolling */
+.ag-help {
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -200,48 +204,43 @@ html, body {
   font-size: 16px;
   line-height: 1.5;
 }
-.ag-man > * { margin: 0; }
-.ag-man__header {
+.ag-help > * { margin: 0; }
+.ag-help__title {
   display: flex;
   flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 8px;
-  color: var(--ag-fg-muted);
+  column-gap: 3ch;
 }
-.ag-man__section {
+.ag-help__tag { color: var(--ag-accent); }
+.ag-help__section {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
-.ag-man__heading {
+.ag-help__rule {
+  overflow: hidden;
+  white-space: nowrap;
+  color: var(--ag-rule);
+}
+.ag-help__heading {
   margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
   font-size: inherit;
   font-weight: var(--ag-weight-bold);
-  color: var(--ag-accent);
 }
-.ag-man__body { padding-left: 4ch; }
-.ag-man__body p { margin: 0; }
-.ag-man__keys {
+.ag-help__heading .ag-help__tag { font-weight: normal; }
+.ag-help__body { padding-left: 4ch; }
+.ag-help__body p { margin: 0; }
+.ag-help__keys {
   display: grid;
   grid-template-columns: max-content 1fr;
   column-gap: 3ch;
   margin: 0;
 }
-.ag-man__keys > div { display: contents; }
-.ag-man__keys dd { margin: 0; }
-/* Enter and q are separate choices, so they sit apart rather than read as one sentence */
-.ag-man__actions {
-  display: flex;
-  flex-wrap: wrap;
-  column-gap: 6ch;
-}
-/* sets the Enter hint apart from the page above it */
-.ag-man__rule {
-  width: 100%;
-  height: 0;
-  border: 0;
-  border-top: 1px solid var(--ag-rule);
-}
+.ag-help__keys > div { display: contents; }
+.ag-help__keys dd { margin: 0; }
 
 /* ---------- hjkl ---------- */
 
