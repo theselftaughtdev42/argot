@@ -27,6 +27,14 @@ describe("renderInstructions", () => {
     expect([...root.querySelectorAll(".ag-man__keys dt")].map((key) => key.textContent)).toEqual(["dd"]);
   });
 
+  it("highlights keys wrapped in backticks, without the backticks", () => {
+    const root = document.createElement("div");
+    renderInstructions(root, { ...instructions, description: "Press `w` to jump, `<b>` too." });
+    expect([...root.querySelectorAll(".ag-man__body p .ag-key")].map((key) => key.textContent)).toEqual(["w", "<b>"]);
+    expect(root.querySelector(".ag-man b")).toBeNull();
+    expect(root.textContent).not.toContain("`");
+  });
+
   it("shows the drill's text as plain text, not markup", () => {
     const root = document.createElement("div");
     renderInstructions(root, { ...instructions, goal: "Type <b> literally." });
