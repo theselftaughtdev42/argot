@@ -5,6 +5,7 @@ import { renderInstructions } from "./renderer";
 const instructions = {
   name: "word",
   summary: "jump a word at a time",
+  description: "Moving by words is faster than moving by characters.",
   keys: [{ keys: "w", action: "next word" }],
   goal: "Land on 15 words as fast as you can.",
 };
@@ -14,18 +15,10 @@ function headings(root: HTMLElement): string[] {
 }
 
 describe("renderInstructions", () => {
-  it("leaves out NOTES when the drill has none", () => {
+  it("shows NAME, DESCRIPTION, KEYS and GOAL, in that order", () => {
     const root = document.createElement("div");
     renderInstructions(root, instructions);
-    expect(headings(root)).toEqual(["NAME", "KEYS", "GOAL"]);
-  });
-
-  it("shows each note as its own line", () => {
-    const root = document.createElement("div");
-    renderInstructions(root, { ...instructions, notes: ["One.", "Two."] });
-    expect(headings(root)).toEqual(["NAME", "KEYS", "GOAL", "NOTES"]);
-    const notes = [...root.querySelectorAll(".ag-man__section:last-of-type .ag-man__body p")];
-    expect(notes.map((note) => note.textContent)).toEqual(["One.", "Two."]);
+    expect(headings(root)).toEqual(["NAME", "DESCRIPTION", "KEYS", "GOAL"]);
   });
 
   it("shows a multi-key sequence as one key", () => {

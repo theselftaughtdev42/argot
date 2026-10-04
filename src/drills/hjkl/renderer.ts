@@ -11,6 +11,8 @@ function renderBestTime(bestTimeMs: number | null): string {
 export const instructions: Instructions = {
   name: "hjkl",
   summary: "move the cursor without the arrow keys",
+  description:
+    "In vim, you move the cursor with h, j, k and l instead of the arrow keys, so your fingers never leave the home row. Here the arrow keys do nothing — only hjkl moves the cursor.",
   keys: [
     { keys: "h", action: "left" },
     { keys: "j", action: "down" },
@@ -18,7 +20,6 @@ export const instructions: Instructions = {
     { keys: "l", action: "right" },
   ],
   goal: `Hit ${HITS_TO_WIN} targets as fast as you can.`,
-  notes: ["Arrow keys do nothing here."],
 };
 
 /** The board as rows of dots; every cell is its own element so its position stays queryable. */

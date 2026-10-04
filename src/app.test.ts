@@ -294,7 +294,7 @@ describe("hjkl instructions screen", () => {
     const root = load();
     run("vim hjkl");
     expect(screenOf(root)).toBe("screen-instructions");
-    expect(manHeadings(root)).toEqual(["NAME", "KEYS", "GOAL", "NOTES"]);
+    expect(manHeadings(root)).toEqual(["NAME", "DESCRIPTION", "KEYS", "GOAL"]);
     const header = [...root.querySelectorAll(".ag-man__header > span")].map((part) => part.textContent);
     expect(header).toEqual(["HJKL(1)", "Argot Drills Instructions", "HJKL(1)"]);
     expect(root.querySelector("button")).toBeNull();
@@ -321,11 +321,18 @@ describe("hjkl instructions screen", () => {
     ]);
   });
 
-  it("gives the goal and notes that arrow keys do nothing", () => {
+  it("explains why vim moves with hjkl, and that arrow keys do nothing here", () => {
+    const root = load();
+    run("vim hjkl");
+    expect(manSection(root, "DESCRIPTION")).toBe(
+      "In vim, you move the cursor with h, j, k and l instead of the arrow keys, so your fingers never leave the home row. Here the arrow keys do nothing — only hjkl moves the cursor.",
+    );
+  });
+
+  it("gives the goal", () => {
     const root = load();
     run("vim hjkl");
     expect(manSection(root, "GOAL")).toBe(`Hit ${HITS_TO_WIN} targets as fast as you can.`);
-    expect(manSection(root, "NOTES")).toBe("Arrow keys do nothing here.");
   });
 
   it("doesn't show the best time, even when the player has one", () => {

@@ -55,7 +55,7 @@ A drill's first screen, explaining the task and waiting for Enter to start.
 _Avoid_: Splash, landing, instructions page
 
 **Man page**:
-The layout every instructions screen uses: a header line, then the sections NAME, KEYS, GOAL and, when the drill has any, NOTES.
+The layout every instructions screen uses: a header line, then the sections NAME, DESCRIPTION, KEYS and GOAL.
 _Avoid_: Help page
 
 **Play screen**:

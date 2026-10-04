@@ -106,7 +106,7 @@ function renderManSection(heading: string, body: string): string {
 }
 
 /** A drill's instructions screen, laid out as a man page and waiting for Enter. */
-export function renderInstructions(root: HTMLElement, { name, summary, keys, goal, notes }: Instructions): void {
+export function renderInstructions(root: HTMLElement, { name, summary, description, keys, goal }: Instructions): void {
   const title = `${escapeHtml(name.toUpperCase())}(1)`;
   const keyRows = keys
     .map(({ keys, action }) => `<div><dt class="ag-key">${escapeHtml(keys)}</dt><dd>${escapeHtml(action)}</dd></div>`)
@@ -115,9 +115,9 @@ export function renderInstructions(root: HTMLElement, { name, summary, keys, goa
     <section class="screen screen-instructions ag-man">
       <header class="ag-man__header"><span>${title}</span><span>Argot Drills Instructions</span><span>${title}</span></header>
       ${renderManSection("NAME", `<strong>${escapeHtml(name)}</strong> — ${escapeHtml(summary)}`)}
+      ${renderManSection("DESCRIPTION", `<p>${escapeHtml(description)}</p>`)}
       ${renderManSection("KEYS", `<dl class="ag-man__keys">${keyRows}</dl>`)}
       ${renderManSection("GOAL", `<p>${escapeHtml(goal)}</p>`)}
-      ${notes?.length ? renderManSection("NOTES", notes.map((note) => `<p>${escapeHtml(note)}</p>`).join("")) : ""}
       <p class="hint ag-muted">press <span class="ag-key">Enter</span> to start</p>
     </section>
   `;
