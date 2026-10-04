@@ -41,7 +41,9 @@ export function renderHome(root: HTMLElement, { input, last, compact }: HomeStat
   const hint =
     last?.name === "ls"
       ? `type <span class="ag-key">vim</span> and a drill name`
-      : `type <span class="ag-key">argot</span> and press <span class="ag-key">enter</span>`;
+      : last?.output.kind === "commands"
+        ? `type a command and press <span class="ag-key">enter</span>`
+        : `type <span class="ag-key">argot</span> and press <span class="ag-key">enter</span>`;
   const brand = `
     <header class="ag-brand${compact ? " ag-brand--compact" : ""}">
       <h1 class="ag-logo">argot</h1>
