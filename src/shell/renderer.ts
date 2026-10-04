@@ -48,10 +48,13 @@ export function renderHome(root: HTMLElement, { input, last, compact }: HomeStat
 
 /**
  * The shell's frame around a running drill, mounted once at launch: the stage
- * the drill owns, the statusline, and the command line. Returns the stage and
- * the command line for the shell to render into.
+ * the drill owns, the statusline, and the command line. Returns the frame, the
+ * stage and the command line for the shell to render into.
  */
-export function renderDrillFrame(root: HTMLElement, name: string): { stage: HTMLElement; cmdline: HTMLElement } {
+export function renderDrillFrame(
+  root: HTMLElement,
+  name: string,
+): { frame: HTMLElement; stage: HTMLElement; cmdline: HTMLElement } {
   // TMP marks the mode as a placeholder until argot has real modes; Esc doesn't change it.
   root.innerHTML = `
     <main class="ag-drill">
@@ -63,6 +66,7 @@ export function renderDrillFrame(root: HTMLElement, name: string): { stage: HTML
     </main>
   `;
   return {
+    frame: root.querySelector<HTMLElement>(".ag-drill")!,
     stage: root.querySelector<HTMLElement>(".ag-drill__stage")!,
     cmdline: root.querySelector<HTMLElement>(".ag-cmdline")!,
   };

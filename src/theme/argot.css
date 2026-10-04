@@ -175,6 +175,10 @@ html, body {
   min-height: 1.7em;
 }
 
+/* the bars are hidden rather than removed, so the stage doesn't shift when Esc brings them back */
+.ag-drill--bare .ag-statusline,
+.ag-drill--bare .ag-cmdline { visibility: hidden; }
+
 /* while the command line is open, the drill steps back so attention moves to it */
 .ag-drill__stage { transition: opacity 0.15s, filter 0.15s; }
 .drill-greyed {
