@@ -30,7 +30,7 @@ What a command shows after it runs: one line, like an error, or several, like `a
 _Avoid_: Output, message
 
 **Hint**:
-The short line telling the visitor or player what to type next. On home it points at `argot`; on the play screen it points at `:help` for instructions, and on the help page at `:q` back to the drill.
+The short line telling the visitor or player what to type next. On home it points at `argot`; on the drill screens it points at the likeliest commands (`:help` on the play screen, `:q` on the help page, `:w` and `:wq` on the results screen) and at `:argot` for the rest.
 _Avoid_: Help, tip
 
 ## Drills
@@ -51,7 +51,7 @@ The bar under the stage showing the mode and the drill's name.
 _Avoid_: Status bar
 
 **Command line**:
-The line under the statusline that opens with Esc, where the player types `:help`, `:q`, `:q!`, `:wq` or `argot`. While it's open, the stage is greyed. `:q` only quits when there's nothing to lose (before the first move, or from the help page); otherwise it shows an E37 error naming `:q!` or `:wq`.
+The line under the statusline that opens with Esc, where the player types `:help`, `:q`, `:q!`, `:w`, `:wq` or `argot`. While it's open, the stage is greyed. `:q` only quits when there's nothing to lose (before the first move, or from the help page); otherwise it shows an E37 error naming `:q!` or `:wq`.
 _Avoid_: Prompt (that's home's), cmdline
 
 **Help page**:
@@ -62,14 +62,14 @@ _Avoid_: Instructions screen, man page, splash, landing, instructions page
 The screen a drill opens on, where the player is doing the drill. The clock starts on the first move.
 
 **Results screen**:
-The screen after a run ends, showing the final time and whether it's a new best.
+The screen after a run ends, showing the final time and whether it's a new best. `:w` saves and starts the next run straight away, so the player can go again and again.
 
 **Run**:
 One attempt at a drill, from the first move to reaching the results screen. Opening the help page ends the run without saving it; `:q` from help starts a fresh one.
 _Avoid_: Round, attempt, session
 
 **Best time**:
-A drill's fastest run, kept once the player saves it with `:wq`.
+A drill's fastest run, kept once the player saves it with `:w` or `:wq`.
 _Avoid_: High score, record
 
 **New best**:

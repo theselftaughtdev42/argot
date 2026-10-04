@@ -49,6 +49,7 @@ export function mountApp(root: HTMLElement): void {
 
   /** Mounts a fresh run of the drill into the stage, with the command line closed. */
   function startRun(running: RunningDrill): void {
+    running.session?.destroy();
     running.command = null;
     running.response = null;
     running.session = drills.get(running.name)!.mount(running.container, (screen) => {
