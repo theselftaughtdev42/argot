@@ -30,7 +30,7 @@ export function mountApp(root: HTMLElement): void {
       container: stage,
       cmdline,
       session: null,
-      screen: "splash",
+      screen: "instructions",
       command: null,
       error: null,
     };

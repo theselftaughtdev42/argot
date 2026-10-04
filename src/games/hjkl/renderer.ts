@@ -7,9 +7,9 @@ function renderBestTime(bestTimeMs: number | null): string {
     : "";
 }
 
-export function renderLanding(root: HTMLElement): void {
+export function renderInstructions(root: HTMLElement): void {
   root.innerHTML = `
-    <section class="screen screen-landing ag-stack">
+    <section class="screen screen-instructions ag-stack">
       <h1 class="ag-title">HJKL Drill</h1>
       <p class="instructions">
         In vim, you move the cursor with <span class="ag-key">h</span> <span class="ag-key">j</span>
@@ -47,16 +47,16 @@ function renderBoard(state: GameState): string {
 }
 
 /**
- * Draws the whole drill. Called on each move rather than each frame, so the
+ * Draws the whole play screen. Called on each move rather than each frame, so the
  * player cursor isn't recreated (restarting its blink) while the clock runs;
  * the clock itself updates through renderElapsed.
  */
-export function renderDrill(root: HTMLElement, state: GameState, elapsedMs: number): void {
+export function renderPlay(root: HTMLElement, state: GameState, elapsedMs: number): void {
   root.innerHTML = `
-    <section class="screen screen-drill ag-drill">
+    <section class="screen screen-play ag-play">
       <div class="ag-muted">reach the <span class="ag-board__target">✕</span> using <span class="ag-key">h j k l</span></div>
       ${renderBoard(state)}
-      <div class="ag-drill__info ag-muted">
+      <div class="ag-play__info ag-muted">
         <span class="timer">${formatTime(elapsedMs)}</span>
         <span class="progress">${state.touches}/${WIN_TOUCHES}</span>
       </div>
@@ -64,7 +64,7 @@ export function renderDrill(root: HTMLElement, state: GameState, elapsedMs: numb
   `;
 }
 
-/** Updates the drill's clock in place. */
+/** Updates the play screen's clock in place. */
 export function renderElapsed(root: HTMLElement, elapsedMs: number): void {
   const timer = root.querySelector(".timer");
   if (timer) timer.textContent = formatTime(elapsedMs);

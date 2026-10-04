@@ -1,7 +1,7 @@
 import { mountHjklGame } from "./hjkl/app";
 
 /** The in-game screens the shell tells apart to pick hints and quit rules. */
-export type GameScreen = "splash" | "play" | "results";
+export type GameScreen = "instructions" | "play" | "results";
 
 /** The shell's handle on a running game. */
 export interface GameSession {
