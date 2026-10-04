@@ -113,7 +113,7 @@ export function renderInstructions(root: HTMLElement, { name, summary, keys, goa
     .join("");
   root.innerHTML = `
     <section class="screen screen-instructions ag-man">
-      <header class="ag-man__header"><span>${title}</span><span>argot drills</span><span>${title}</span></header>
+      <header class="ag-man__header"><span>${title}</span><span>argot drills instructions</span><span>${title}</span></header>
       ${renderManSection("NAME", `<strong>${escapeHtml(name)}</strong> — ${escapeHtml(summary)}`)}
       ${renderManSection("KEYS", `<dl class="ag-man__keys">${keyRows}</dl>`)}
       ${renderManSection("GOAL", `<p>${escapeHtml(goal)}</p>`)}
