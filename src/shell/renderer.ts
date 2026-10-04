@@ -82,9 +82,10 @@ export function renderCommandLine(
   command: string | null,
   error: string | null,
 ): void {
+  const esc = command === null ? `<span class="ag-key">Esc</span> then ` : "";
   const hint =
     screen === "results"
-      ? `<span class="ag-key">:wq</span> save &amp; quit · <span class="ag-key">:q!</span> quit without saving`
+      ? `${esc}<span class="ag-key">:wq</span> save &amp; quit · <span class="ag-key">:q!</span> quit without saving`
       : command !== null
         ? `type <span class="ag-key">:q!</span> to quit`
         : `<span class="ag-key">Esc</span> then <span class="ag-key">:q!</span> back to home without saving`;
