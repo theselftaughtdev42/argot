@@ -38,6 +38,12 @@ type RunningDrill = {
 export function mountApp(root: HTMLElement): void {
   const home: HomeState = { input: "", last: null, compact: false };
   let drill: RunningDrill | null = null;
+  /** Commands run at the prompt this visit, oldest first, for ArrowUp and ArrowDown to step through. */
+  const history: string[] = [];
+  /** Where ArrowUp and ArrowDown have got to in history; history.length is the line being typed. */
+  let historyIndex = 0;
+  /** What was being typed before stepping into history, for ArrowDown to come back to. */
+  let draft = "";
 
   function renderDrill(): void {
     if (!drill) return;
@@ -158,9 +164,21 @@ export function mountApp(root: HTMLElement): void {
 
   function handleHomeKeydown(event: KeyboardEvent): void {
     if (event.key === "Enter") {
-      runCommand(home.input.trim());
+      const line = home.input.trim();
+      // Like a shell's ignoredups: an empty line or a repeat of the last command isn't worth recalling.
+      if (line && line !== history.at(-1)) history.push(line);
+      historyIndex = history.length;
       home.input = "";
+      runCommand(line);
       if (drill) return;
+    } else if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+      // Arrows would otherwise scroll the page.
+      event.preventDefault();
+      const next = historyIndex + (event.key === "ArrowUp" ? -1 : 1);
+      if (next < 0 || next > history.length) return;
+      if (historyIndex === history.length) draft = home.input;
+      historyIndex = next;
+      home.input = next === history.length ? draft : history[next]!;
     } else if (event.key === "Backspace") {
       home.input = home.input.slice(0, -1);
     } else if (event.key.length === 1) {
