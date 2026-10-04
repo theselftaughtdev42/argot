@@ -66,6 +66,9 @@ function textOf(root: HTMLElement, selector: string): string | undefined {
 /** The command-line hint on the instructions and play screens while the line is closed. */
 const PLAY_HINT = "Esc then :q! back to home without saving";
 
+/** The command-line hint on the results screen while the line is closed. */
+const RESULTS_HINT = "Esc then :wq save & quit · :q! quit without saving";
+
 /** The keys and commands highlighted in the command line's hint. */
 function hintKeys(root: HTMLElement): string[] {
   return [...root.querySelectorAll(".cmdline-hint .ag-key")].map((key) => key.textContent!);
@@ -502,12 +505,23 @@ describe("drill frame", () => {
     expect(hintKeys(root)).toEqual([":q!"]);
   });
 
-  it("on results, hints at :wq and :q!", () => {
+  it("on results with the command line closed, hints at Esc then :wq or :q!", () => {
     const root = load();
     startHjkl();
     playToCompletion(root);
+    expect(textOf(root, ".cmdline-hint")).toBe(RESULTS_HINT);
+    expect(hintKeys(root)).toEqual(["Esc", ":wq", ":q!"]);
+    expect(root.querySelector(".ag-cmdline .ag-cursor")).toBeNull();
+  });
+
+  it("on results with the command line open, hints at :wq and :q!", () => {
+    const root = load();
+    startHjkl();
+    playToCompletion(root);
+    press("Escape");
     expect(textOf(root, ".cmdline-hint")).toBe(":wq save & quit · :q! quit without saving");
     expect(hintKeys(root)).toEqual([":wq", ":q!"]);
+    expect(root.querySelector(".cmdline-input + .ag-cursor")).not.toBeNull();
   });
 
   it("shows an unsupported command's error in place of the hint", () => {
@@ -709,19 +723,38 @@ describe("command mode on the play screen", () => {
 });
 
 describe("hjkl results", () => {
-  it("shows the final time and new best with the command line already open, and no buttons", () => {
+  it("shows the final time and new best with the command line closed, and no buttons", () => {
     const root = load();
     startHjkl();
     playToCompletion(root);
     expect(screenOf(root)).toBe("screen-results");
     expect(textOf(root, ".final-time")).toMatch(/^\d+\.\d\ds$/);
     expect(root.querySelector(".new-best")).not.toBeNull();
-    expect(textOf(root, ".cmdline-input")).toBe("");
-    expect(root.querySelector(".drill-greyed")).toBeNull();
+    expect(root.querySelector(".cmdline-input")).toBeNull();
     expect(root.querySelector("button")).toBeNull();
+  });
 
+  it("needs Esc before a command, like vim: typing first does nothing", () => {
+    const root = load();
+    startHjkl();
+    playToCompletion(root);
+    run(":wq");
+    expect(screenOf(root)).toBe("screen-results");
+    expect(root.querySelector(".cmdline-input")).toBeNull();
+    expect(localStorage.getItem("hjkl:bestTimeMs")).toBeNull();
+
+    press("Escape");
+    expect(textOf(root, ".cmdline-input")).toBe("");
     type(":w");
     expect(textOf(root, ".cmdline-input")).toBe(":w");
+  });
+
+  it("doesn't grey results while the command line is open", () => {
+    const root = load();
+    startHjkl();
+    playToCompletion(root);
+    press("Escape");
+    expect(root.querySelector(".drill-greyed")).toBeNull();
   });
 
   it(":wq on a time that isn't a new best leaves the stored best and returns home", () => {
@@ -731,6 +764,7 @@ describe("hjkl results", () => {
     playToCompletion(root);
     expect(root.querySelector(".new-best")).toBeNull();
 
+    press("Escape");
     run(":wq");
     expect(screenOf(root)).toBe("home");
     expect(localStorage.getItem("hjkl:bestTimeMs")).toBe("1");
@@ -742,6 +776,7 @@ describe("hjkl results", () => {
     playToCompletion(root);
     expect(root.querySelector(".new-best")).not.toBeNull();
 
+    press("Escape");
     run(":q!");
     expect(screenOf(root)).toBe("home");
     expect(localStorage.getItem("hjkl:bestTimeMs")).toBeNull();
@@ -762,31 +797,30 @@ describe("hjkl results", () => {
     expect(root.querySelector(".best-time")).toBeNull();
   });
 
-  it("shows a hint explaining :wq and :q!", () => {
-    const root = load();
-    startHjkl();
-    playToCompletion(root);
-    expect(textOf(root, ".cmdline-hint")).toBe(":wq save & quit · :q! quit without saving");
-  });
-
   it.each([":q", ":w", ":x", "wq"])("%s shows an error naming :wq and :q!, and stays on results", (command) => {
     const root = load();
     startHjkl();
     playToCompletion(root);
+    press("Escape");
     run(command);
     expect(textOf(root, ".ag-cmdline .ag-error")).toBe(`${command} isn't supported in argot (use :wq or :q!)`);
     expect(textOf(root, ".cmdline-input")).toBe("");
     expect(screenOf(root)).toBe("screen-results");
   });
 
-  it("Esc discards what's typed but keeps the command line open, so the player can still leave", () => {
+  it("Esc closes the command line, discarding what's typed, and Esc opens it again empty", () => {
     const root = load();
     startHjkl();
     playToCompletion(root);
+    press("Escape");
     type(":x");
     press("Escape");
-    expect(textOf(root, ".cmdline-input")).toBe("");
+    expect(root.querySelector(".cmdline-input")).toBeNull();
+    expect(textOf(root, ".cmdline-hint")).toBe(RESULTS_HINT);
+    expect(screenOf(root)).toBe("screen-results");
 
+    press("Escape");
+    expect(textOf(root, ".cmdline-input")).toBe("");
     run(":q!");
     expect(screenOf(root)).toBe("home");
   });
@@ -812,6 +846,7 @@ describe("full flow", () => {
     playToCompletion(root);
     expect(screenOf(root)).toBe("screen-results");
 
+    press("Escape");
     run(":q!");
     expect(screenOf(root)).toBe("home");
 
@@ -830,6 +865,7 @@ describe("full flow", () => {
     playToCompletion(first);
     const finalTime = textOf(first, ".final-time");
 
+    press("Escape");
     run(":wq");
     expect(screenOf(first)).toBe("home");
 

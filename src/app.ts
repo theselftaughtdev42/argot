@@ -41,8 +41,6 @@ export function mountApp(root: HTMLElement): void {
     drill = running;
     running.session = drills.get(name)!(running.container, (screen) => {
       running.screen = screen;
-      // Results has nothing to play, so it opens straight onto the command line.
-      if (screen === "results") running.command = "";
       renderDrill();
     });
   }
@@ -86,12 +84,7 @@ export function mountApp(root: HTMLElement): void {
         drill.session?.handleKey(event);
         return;
       }
-      if (drill.screen === "results") return;
       drill.command = "";
-    } else if (event.key === "Escape" && drill.screen === "results") {
-      // Results has no drill to go back to, so Esc only clears the line.
-      drill.command = "";
-      drill.error = null;
     } else if (event.key === "Escape") {
       drill.command = null;
       drill.error = null;
