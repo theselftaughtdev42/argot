@@ -30,7 +30,7 @@ What a command shows after it runs: one line, like an error, or several, like `a
 _Avoid_: Output, message
 
 **Hint**:
-The short line telling the visitor or player what to type next. On the play screen it points at `:help` for instructions, and on the help page at `:q` back to the drill.
+The short line telling the visitor or player what to type next. On home it points at `argot`; on the play screen it points at `:help` for instructions, and on the help page at `:q` back to the drill.
 _Avoid_: Help, tip
 
 ## Drills

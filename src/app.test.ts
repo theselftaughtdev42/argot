@@ -133,19 +133,19 @@ function playToCompletion(root: HTMLElement): void {
 }
 
 describe("home command line", () => {
-  const LS_HINT = "type ls and press enter";
+  const ARGOT_HINT = "type argot and press enter";
   const VIM_HINT = "type vim and a drill name";
 
   function keysIn(root: HTMLElement, selector: string): string[] {
     return [...root.querySelectorAll(`${selector} .ag-key`)].map((key) => key.textContent!);
   }
 
-  it("greets a fresh visit with the logo, tagline, a hint to type ls, and the prompt's cursor", () => {
+  it("greets a fresh visit with the logo, tagline, a hint to type argot, and the prompt's cursor", () => {
     const root = load();
     expect(textOf(root, ".ag-logo")).toBe("argot");
     expect(textOf(root, ".ag-tagline")).toBe("learn to speak vim. no mouse, just keys.");
-    expect(textOf(root, ".home-hint")).toBe(LS_HINT);
-    expect(keysIn(root, ".home-hint")).toEqual(["ls", "enter"]);
+    expect(textOf(root, ".home-hint")).toBe(ARGOT_HINT);
+    expect(keysIn(root, ".home-hint")).toEqual(["argot", "enter"]);
     expect(root.querySelector(".prompt-input + .ag-cursor")).not.toBeNull();
     expect(root.querySelector(".ag-ls, .ag-error")).toBeNull();
   });
@@ -190,13 +190,13 @@ describe("home command line", () => {
     expect(screenOf(root)).toBe("home");
   });
 
-  it("an error after ls replaces the list and hints at ls again", () => {
+  it("an error after ls replaces the list and hints at argot again", () => {
     const root = load();
     run("ls");
     run("pwd");
     expect(root.querySelector(".ag-ls")).toBeNull();
     expect(textOf(root, ".ag-error")).toBe("pwd: command not found (type argot for commands)");
-    expect(textOf(root, ".home-hint")).toBe(LS_HINT);
+    expect(textOf(root, ".home-hint")).toBe(ARGOT_HINT);
   });
 
   it("does nothing on Enter at an empty prompt", () => {
@@ -204,22 +204,22 @@ describe("home command line", () => {
     press("Enter");
     expect(root.querySelector(".ag-error")).toBeNull();
     expect(root.querySelector(".ag-error")).toBeNull();
-    expect(textOf(root, ".home-hint")).toBe(LS_HINT);
+    expect(textOf(root, ".home-hint")).toBe(ARGOT_HINT);
   });
 
-  it("Enter at an empty prompt clears the last output and hints at ls", () => {
+  it("Enter at an empty prompt clears the last output and hints at argot", () => {
     const root = load();
     run("ls");
     press("Enter");
     expect(root.querySelector(".ag-ls")).toBeNull();
-    expect(textOf(root, ".home-hint")).toBe(LS_HINT);
+    expect(textOf(root, ".home-hint")).toBe(ARGOT_HINT);
   });
 
   it("vim with no drill name prints an error and stays on home", () => {
     const root = load();
     run("vim");
     expect(textOf(root, ".ag-error")).toBe("vim: missing drill name");
-    expect(textOf(root, ".home-hint")).toBe(LS_HINT);
+    expect(textOf(root, ".home-hint")).toBe(ARGOT_HINT);
     expect(screenOf(root)).toBe("home");
   });
 
@@ -243,14 +243,14 @@ describe("home command line", () => {
     expect(root.querySelector(".ag-error b")).toBeNull();
   });
 
-  it("returning from a drill shows a clean home, with no output and a hint to type ls", () => {
+  it("returning from a drill shows a clean home, with no output and a hint to type argot", () => {
     const root = load();
     run("ls");
     run("vim hjkl");
     press("Escape");
     run(":q!");
     expect(root.querySelector(".ag-ls, .ag-error")).toBeNull();
-    expect(textOf(root, ".home-hint")).toBe(LS_HINT);
+    expect(textOf(root, ".home-hint")).toBe(ARGOT_HINT);
     expect(textOf(root, ".prompt-input")).toBe("");
   });
 });
