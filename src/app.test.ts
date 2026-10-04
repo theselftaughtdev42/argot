@@ -71,6 +71,19 @@ function hintKeys(root: HTMLElement): string[] {
   return [...root.querySelectorAll(".cmdline-hint .ag-key")].map((key) => key.textContent!);
 }
 
+/** The headings of the man page on the instructions screen, in order. */
+function manHeadings(root: HTMLElement): string[] {
+  return [...root.querySelectorAll(".ag-man__heading")].map((heading) => heading.textContent!);
+}
+
+/** The body text of the man page section under `heading`. */
+function manSection(root: HTMLElement, heading: string): string | undefined {
+  const section = [...root.querySelectorAll(".ag-man__section")].find(
+    (section) => section.querySelector(".ag-man__heading")?.textContent === heading,
+  );
+  return section?.querySelector(".ag-man__body")?.textContent?.replace(/\s+/g, " ").trim();
+}
+
 const CURSOR = ".ag-board__cursor";
 const TARGET = ".ag-board__target";
 
@@ -277,13 +290,42 @@ describe("home logo", () => {
 });
 
 describe("hjkl instructions screen", () => {
-  it("vim hjkl opens the instructions screen with the key legend and no buttons", () => {
+  it("vim hjkl opens the instructions screen as a man page, with no buttons", () => {
     const root = load();
     run("vim hjkl");
     expect(screenOf(root)).toBe("screen-instructions");
-    const legend = textOf(root, ".key-legend")!.replace(/\s+/g, " ").trim();
-    expect(legend).toBe("h left j down k up l right");
+    expect(manHeadings(root)).toEqual(["NAME", "KEYS", "GOAL", "NOTES"]);
+    const header = [...root.querySelectorAll(".ag-man__header > span")].map((part) => part.textContent);
+    expect(header).toEqual(["HJKL(1)", "argot drills", "HJKL(1)"]);
     expect(root.querySelector("button")).toBeNull();
+  });
+
+  it("names the drill and says what it teaches", () => {
+    const root = load();
+    run("vim hjkl");
+    expect(manSection(root, "NAME")).toBe("hjkl — move the cursor without the arrow keys");
+  });
+
+  it("lists each key with what it does, the keys highlighted", () => {
+    const root = load();
+    run("vim hjkl");
+    const keys = [...root.querySelectorAll(".ag-man__keys > div")].map((row) => [
+      row.querySelector("dt.ag-key")!.textContent,
+      row.querySelector("dd")!.textContent,
+    ]);
+    expect(keys).toEqual([
+      ["h", "left"],
+      ["j", "down"],
+      ["k", "up"],
+      ["l", "right"],
+    ]);
+  });
+
+  it("gives the goal and notes that arrow keys do nothing", () => {
+    const root = load();
+    run("vim hjkl");
+    expect(manSection(root, "GOAL")).toBe(`Hit ${HITS_TO_WIN} targets as fast as you can.`);
+    expect(manSection(root, "NOTES")).toBe("Arrow keys do nothing here.");
   });
 
   it("doesn't show the best time, even when the player has one", () => {

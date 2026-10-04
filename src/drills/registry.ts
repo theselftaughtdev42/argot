@@ -3,6 +3,23 @@ import { mountHjklDrill } from "./hjkl/app";
 /** The screens of a drill the shell tells apart to pick hints and quit rules. */
 export type DrillScreen = "instructions" | "play" | "results";
 
+/**
+ * What a drill's instructions screen says. The shell lays every drill's out the
+ * same way, as a man page with NAME, KEYS, GOAL and, when there are notes, NOTES.
+ */
+export interface Instructions {
+  /** The drill's name, as typed after `vim`. */
+  name: string;
+  /** What the drill teaches, shown after the name under NAME. */
+  summary: string;
+  /** Each key or key sequence (e.g. `dd`) and what it does. */
+  keys: { keys: string; action: string }[];
+  /** What finishes a run. */
+  goal: string;
+  /** Rules and surprises, one line each. */
+  notes?: string[];
+}
+
 /** The shell's handle on a running drill. */
 export interface DrillSession {
   /**

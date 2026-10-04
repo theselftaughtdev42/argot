@@ -61,7 +61,6 @@ html, body {
 .ag-muted { color: var(--ag-fg-muted); }
 .ag-key { color: var(--ag-highlight); font-weight: var(--ag-weight-bold); }
 .ag-highlight { color: var(--ag-highlight); }
-.ag-title { font-size: inherit; font-weight: var(--ag-weight-bold); }
 .ag-hero { font-size: 48px; line-height: 1.2; font-weight: var(--ag-weight-bold); }
 .ag-error { color: var(--ag-error); }
 /* helper text under the prompt */
@@ -188,6 +187,44 @@ html, body {
 /* ...and its cursor holds still, so only the command line's blinks */
 .drill-greyed .ag-cursor { animation: none; }
 
+/* every drill's instructions screen is a man page: a header line, then
+   uppercase headings over indented bodies */
+.ag-man {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.ag-man > * { margin: 0; }
+.ag-man__header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--ag-fg-muted);
+}
+.ag-man__section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ag-man__heading {
+  margin: 0;
+  font-size: inherit;
+  font-weight: var(--ag-weight-bold);
+  color: var(--ag-accent);
+}
+.ag-man__body { padding-left: 4ch; }
+.ag-man__body p { margin: 0; }
+.ag-man__keys {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  column-gap: 3ch;
+  margin: 0;
+}
+.ag-man__keys > div { display: contents; }
+.ag-man__keys dd { margin: 0; }
+
 /* ---------- hjkl ---------- */
 
 .ag-play {
@@ -197,16 +234,6 @@ html, body {
   gap: 32px;
 }
 .ag-play__info { display: flex; gap: 28px; }
-
-.ag-legend {
-  display: flex;
-  flex-wrap: wrap;
-  column-gap: 28px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  color: var(--ag-fg-muted);
-}
 
 /* ---------- accessibility ---------- */
 

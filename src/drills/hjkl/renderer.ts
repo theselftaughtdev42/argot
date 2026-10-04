@@ -1,5 +1,6 @@
 import { BOARD_SIZE, HITS_TO_WIN, type RunState } from "./engine";
 import { formatTime } from "./timer";
+import type { Instructions } from "../registry";
 
 function renderBestTime(bestTimeMs: number | null): string {
   return bestTimeMs !== null
@@ -7,25 +8,18 @@ function renderBestTime(bestTimeMs: number | null): string {
     : "";
 }
 
-export function renderInstructions(root: HTMLElement): void {
-  root.innerHTML = `
-    <section class="screen screen-instructions ag-stack">
-      <h1 class="ag-title">HJKL Drill</h1>
-      <p class="instructions">
-        In vim, you move the cursor with <span class="ag-key">h</span> <span class="ag-key">j</span>
-        <span class="ag-key">k</span> <span class="ag-key">l</span> instead of the arrow keys.
-      </p>
-      <ul class="key-legend ag-legend">
-        <li><span class="ag-key">h</span> left</li>
-        <li><span class="ag-key">j</span> down</li>
-        <li><span class="ag-key">k</span> up</li>
-        <li><span class="ag-key">l</span> right</li>
-      </ul>
-      <p class="goal ag-muted">Hit ${HITS_TO_WIN} targets as fast as you can. Arrow keys do nothing here &mdash; only hjkl moves the cursor.</p>
-      <p class="hint ag-muted">press <span class="ag-key">Enter</span> to start</p>
-    </section>
-  `;
-}
+export const instructions: Instructions = {
+  name: "hjkl",
+  summary: "move the cursor without the arrow keys",
+  keys: [
+    { keys: "h", action: "left" },
+    { keys: "j", action: "down" },
+    { keys: "k", action: "up" },
+    { keys: "l", action: "right" },
+  ],
+  goal: `Hit ${HITS_TO_WIN} targets as fast as you can.`,
+  notes: ["Arrow keys do nothing here."],
+};
 
 /** The board as rows of dots; every cell is its own element so its position stays queryable. */
 function renderBoard(state: RunState): string {
