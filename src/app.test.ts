@@ -329,6 +329,13 @@ describe("hjkl instructions screen", () => {
     );
   });
 
+  it("highlights the keys the description names, like the KEYS section", () => {
+    const root = load();
+    run("vim hjkl");
+    const description = [...root.querySelectorAll(".ag-man__section")][1];
+    expect([...description.querySelectorAll(".ag-key")].map((key) => key.textContent)).toEqual(["h", "j", "k", "l"]);
+  });
+
   it("gives the goal", () => {
     const root = load();
     run("vim hjkl");

@@ -5,7 +5,9 @@ export type DrillScreen = "instructions" | "play" | "results";
 
 /**
  * What a drill's instructions screen says. The shell lays every drill's out the
- * same way, as a man page with NAME, DESCRIPTION, KEYS and GOAL.
+ * same way, as a man page with NAME, DESCRIPTION, KEYS and GOAL. In the
+ * summary, description and goal, wrap a key in backticks (e.g. `h`) to
+ * highlight it like the keys under KEYS.
  */
 export interface Instructions {
   /** The drill's name, as typed after `vim`. */

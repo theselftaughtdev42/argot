@@ -96,6 +96,11 @@ export function renderCommandLine(
   `;
 }
 
+/** A man page's prose, escaped, with each `key` in backticks highlighted as a key. */
+function renderManText(text: string): string {
+  return escapeHtml(text).replace(/`([^`]+)`/g, `<span class="ag-key">$1</span>`);
+}
+
 function renderManSection(heading: string, body: string): string {
   return `
     <section class="ag-man__section">
@@ -114,10 +119,10 @@ export function renderInstructions(root: HTMLElement, { name, summary, descripti
   root.innerHTML = `
     <section class="screen screen-instructions ag-man">
       <header class="ag-man__header"><span>${title}</span><span>Argot Drills Instructions</span><span>${title}</span></header>
-      ${renderManSection("NAME", `<strong>${escapeHtml(name)}</strong> — ${escapeHtml(summary)}`)}
-      ${renderManSection("DESCRIPTION", `<p>${escapeHtml(description)}</p>`)}
+      ${renderManSection("NAME", `<strong>${escapeHtml(name)}</strong> — ${renderManText(summary)}`)}
+      ${renderManSection("DESCRIPTION", `<p>${renderManText(description)}</p>`)}
       ${renderManSection("KEYS", `<dl class="ag-man__keys">${keyRows}</dl>`)}
-      ${renderManSection("GOAL", `<p>${escapeHtml(goal)}</p>`)}
+      ${renderManSection("GOAL", `<p>${renderManText(goal)}</p>`)}
       <hr class="ag-man__rule">
       <p class="hint ag-muted ag-man__actions">
         <span>press <span class="ag-key">Enter</span> to start</span>
