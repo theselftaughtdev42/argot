@@ -51,7 +51,7 @@ The line under the statusline that opens with Esc, where the player types `:q!` 
 _Avoid_: Prompt (that's home's), cmdline
 
 **Instructions screen**:
-A drill's first screen, explaining the task and waiting for Enter to start.
+A drill's first screen, explaining the task and waiting for Enter to start, or q to go back home.
 _Avoid_: Splash, landing, instructions page
 
 **Man page**:
