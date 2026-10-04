@@ -1,30 +1,30 @@
-export const GRID_SIZE = 10;
-export const WIN_TOUCHES = devTargetOverride() ?? 15;
+export const BOARD_SIZE = 10;
+export const HITS_TO_WIN = devHitsOverride() ?? 15;
 export const MIN_SPAWN_DISTANCE = 5;
 
 /**
- * Dev-only: set VITE_HJKL_TARGETS (e.g. in .env.local) to shorten drills while
+ * Dev-only: set VITE_HJKL_HITS (e.g. in .env.local) to shorten runs while
  * running `pnpm dev`. Ignored in builds and tests.
  */
-function devTargetOverride(): number | null {
+function devHitsOverride(): number | null {
   if (import.meta.env.MODE !== "development") return null;
-  const targets = Number(import.meta.env.VITE_HJKL_TARGETS);
-  return Number.isInteger(targets) && targets > 0 ? targets : null;
+  const hits = Number(import.meta.env.VITE_HJKL_HITS);
+  return Number.isInteger(hits) && hits > 0 ? hits : null;
 }
 
 export type Direction = "h" | "j" | "k" | "l";
-export type GameStatus = "idle" | "playing" | "complete";
+export type RunStatus = "idle" | "playing" | "complete";
 
 export interface Position {
   x: number;
   y: number;
 }
 
-export interface GameState {
+export interface RunState {
   cursor: Position;
   target: Position;
-  touches: number;
-  status: GameStatus;
+  hits: number;
+  status: RunStatus;
 }
 
 const DELTAS: Record<Direction, Position> = {
@@ -48,8 +48,8 @@ function manhattanDistance(a: Position, b: Position): number {
 
 function randomCell(): Position {
   return {
-    x: Math.floor(Math.random() * GRID_SIZE),
-    y: Math.floor(Math.random() * GRID_SIZE),
+    x: Math.floor(Math.random() * BOARD_SIZE),
+    y: Math.floor(Math.random() * BOARD_SIZE),
   };
 }
 
@@ -65,36 +65,36 @@ export function spawnTarget(cursor: Position): Position {
   return candidate;
 }
 
-export function createGame(): GameState {
-  const center = Math.floor(GRID_SIZE / 2);
+export function createRun(): RunState {
+  const center = Math.floor(BOARD_SIZE / 2);
   const cursor: Position = { x: center, y: center };
   return {
     cursor,
     target: spawnTarget(cursor),
-    touches: 0,
+    hits: 0,
     status: "idle",
   };
 }
 
-export function move(state: GameState, direction: Direction): GameState {
+export function move(state: RunState, direction: Direction): RunState {
   if (state.status === "complete") {
     return state;
   }
 
   const delta = DELTAS[direction];
   const nextCursor: Position = {
-    x: clamp(state.cursor.x + delta.x, 0, GRID_SIZE - 1),
-    y: clamp(state.cursor.y + delta.y, 0, GRID_SIZE - 1),
+    x: clamp(state.cursor.x + delta.x, 0, BOARD_SIZE - 1),
+    y: clamp(state.cursor.y + delta.y, 0, BOARD_SIZE - 1),
   };
 
   const hit = positionsEqual(nextCursor, state.target);
-  const touches = hit ? state.touches + 1 : state.touches;
-  const won = hit && touches >= WIN_TOUCHES;
+  const hits = hit ? state.hits + 1 : state.hits;
+  const won = hit && hits >= HITS_TO_WIN;
 
   return {
     cursor: nextCursor,
     target: hit && !won ? spawnTarget(nextCursor) : state.target,
-    touches,
+    hits,
     status: won ? "complete" : "playing",
   };
 }

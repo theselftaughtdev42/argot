@@ -1,4 +1,4 @@
-import { games } from "../games/registry";
+import { drills } from "../drills/registry";
 
 /** What a home command can do to the shell. */
 export interface Shell {
@@ -6,12 +6,12 @@ export interface Shell {
   list(items: string[]): void;
   /** Shows `text` as an error under the prompt, replacing the last output. */
   error(text: string): void;
-  /** Leaves home for the game called `name`, which must be in the registry. */
-  launchGame(name: string): void;
+  /** Leaves home for the drill called `name`, which must be in the registry. */
+  launchDrill(name: string): void;
 }
 
 export interface Command {
-  /** How to call it, for help text, e.g. `vim <game>`. */
+  /** How to call it, for help text, e.g. `vim <drill>`. */
   usage: string;
   /** One line on what it does, for help text. */
   description: string;
@@ -25,21 +25,21 @@ export const commands = new Map<string, Command>([
     "ls",
     {
       usage: "ls",
-      description: "list games",
+      description: "list drills",
       run(_args, shell) {
-        shell.list([...games.keys()]);
+        shell.list([...drills.keys()]);
       },
     },
   ],
   [
     "vim",
     {
-      usage: "vim <game>",
-      description: "play a game",
+      usage: "vim <drill>",
+      description: "start a drill",
       run([name], shell) {
-        if (!name) shell.error("vim: missing game name");
-        else if (games.has(name)) shell.launchGame(name);
-        else shell.error(`vim: no such game: ${name}`);
+        if (!name) shell.error("vim: missing drill name");
+        else if (drills.has(name)) shell.launchDrill(name);
+        else shell.error(`vim: no such drill: ${name}`);
       },
     },
   ],

@@ -42,7 +42,7 @@ describe("best-time storage", () => {
     expect(getBestTime()).toBe(14320);
   });
 
-  it("namespaces the key to this game", async () => {
+  it("namespaces the key to this drill", async () => {
     const { saveBestTimeIfBetter } = await loadStorage();
     saveBestTimeIfBetter(14320);
     expect([...backing.keys()]).toEqual(["hjkl:bestTimeMs"]);

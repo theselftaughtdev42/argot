@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mountApp } from "./app";
-import { GRID_SIZE, WIN_TOUCHES } from "./games/hjkl/engine";
+import { BOARD_SIZE, HITS_TO_WIN } from "./drills/hjkl/engine";
 
 let listeners: [string, EventListenerOrEventListenerObject][];
 
@@ -53,7 +53,7 @@ function run(command: string): void {
   press("Enter");
 }
 
-/** "home", or the class naming the game screen showing. */
+/** "home", or the class naming the drill screen showing. */
 function screenOf(root: HTMLElement): string | undefined {
   if (root.querySelector(".ag-home")) return "home";
   return root.querySelector(".screen")?.classList[1];
@@ -63,7 +63,7 @@ function textOf(root: HTMLElement, selector: string): string | undefined {
   return root.querySelector(selector)?.textContent ?? undefined;
 }
 
-/** The command-line hint on splash and play while the line is closed. */
+/** The command-line hint on the instructions and play screens while the line is closed. */
 const PLAY_HINT = "Esc then :q! back to home without saving";
 
 /** The keys and commands highlighted in the command line's hint. */
@@ -71,14 +71,14 @@ function hintKeys(root: HTMLElement): string[] {
   return [...root.querySelectorAll(".cmdline-hint .ag-key")].map((key) => key.textContent!);
 }
 
-const PLAYER = ".ag-board__player";
+const CURSOR = ".ag-board__cursor";
 const TARGET = ".ag-board__target";
 
 function cellIndex(root: HTMLElement, selector: string): number {
   return [...root.querySelectorAll(".board-cell")].findIndex((cell) => cell.matches(selector));
 }
 
-/** Launches hjkl from home and starts the drill, as a player would. */
+/** Launches hjkl from home and starts a run, as a player would. */
 function startHjkl(): void {
   run("vim hjkl");
   press("Enter");
@@ -86,10 +86,10 @@ function startHjkl(): void {
 
 /** The hjkl key that would move the cursor one step toward the target. */
 function keyTowardTarget(root: HTMLElement): string {
-  const cursor = cellIndex(root, PLAYER);
+  const cursor = cellIndex(root, CURSOR);
   const target = cellIndex(root, TARGET);
-  const dx = (target % GRID_SIZE) - (cursor % GRID_SIZE);
-  const dy = Math.floor(target / GRID_SIZE) - Math.floor(cursor / GRID_SIZE);
+  const dx = (target % BOARD_SIZE) - (cursor % BOARD_SIZE);
+  const dy = Math.floor(target / BOARD_SIZE) - Math.floor(cursor / BOARD_SIZE);
   return dx < 0 ? "h" : dx > 0 ? "l" : dy < 0 ? "k" : "j";
 }
 
@@ -99,12 +99,12 @@ function stepTowardTarget(root: HTMLElement): void {
 }
 
 function playToCompletion(root: HTMLElement): void {
-  while (screenOf(root) === "screen-drill") stepTowardTarget(root);
+  while (screenOf(root) === "screen-play") stepTowardTarget(root);
 }
 
 describe("home command line", () => {
   const LS_HINT = "type ls and press enter";
-  const VIM_HINT = "type vim and a game name";
+  const VIM_HINT = "type vim and a drill name";
 
   function keysIn(root: HTMLElement, selector: string): string[] {
     return [...root.querySelectorAll(`${selector} .ag-key`)].map((key) => key.textContent!);
@@ -143,7 +143,7 @@ describe("home command line", () => {
     expect(textOf(root, ".prompt-input")).toBe("");
   });
 
-  it("ls lists the games, hints at vim, and clears the prompt, without repeating the command", () => {
+  it("ls lists the drills, hints at vim, and clears the prompt, without repeating the command", () => {
     const root = load();
     run("ls");
     expect(root.textContent).not.toMatch(/\bls\b/);
@@ -155,7 +155,7 @@ describe("home command line", () => {
 
   it("reports any other command as not found, as an error, and stays on home", () => {
     const root = load();
-    run("cd games");
+    run("cd drills");
     expect(textOf(root, ".ag-error")).toBe("cd: command not found");
     expect(screenOf(root)).toBe("home");
   });
@@ -185,25 +185,25 @@ describe("home command line", () => {
     expect(textOf(root, ".home-hint")).toBe(LS_HINT);
   });
 
-  it("vim with no game name prints an error and stays on home", () => {
+  it("vim with no drill name prints an error and stays on home", () => {
     const root = load();
     run("vim");
-    expect(textOf(root, ".ag-error")).toBe("vim: missing game name");
+    expect(textOf(root, ".ag-error")).toBe("vim: missing drill name");
     expect(textOf(root, ".home-hint")).toBe(LS_HINT);
     expect(screenOf(root)).toBe("home");
   });
 
-  it("vim with an unknown game prints an error and stays on home", () => {
+  it("vim with an unknown drill prints an error and stays on home", () => {
     const root = load();
     run("vim tetris");
-    expect(textOf(root, ".ag-error")).toBe("vim: no such game: tetris");
+    expect(textOf(root, ".ag-error")).toBe("vim: no such drill: tetris");
     expect(screenOf(root)).toBe("home");
   });
 
-  it("does not treat built-in object names as games", () => {
+  it("does not treat built-in object names as drills", () => {
     const root = load();
     run("vim constructor");
-    expect(textOf(root, ".ag-error")).toBe("vim: no such game: constructor");
+    expect(textOf(root, ".ag-error")).toBe("vim: no such drill: constructor");
   });
 
   it("escapes what's typed rather than rendering it as markup", () => {
@@ -213,7 +213,7 @@ describe("home command line", () => {
     expect(root.querySelector(".ag-error b")).toBeNull();
   });
 
-  it("returning from a game shows a clean home, with no output and a hint to type ls", () => {
+  it("returning from a drill shows a clean home, with no output and a hint to type ls", () => {
     const root = load();
     run("ls");
     run("vim hjkl");
@@ -234,7 +234,7 @@ describe("home logo", () => {
     expect(isCompact(load())).toBe(false);
   });
 
-  it.each(["ls", "cd games", "vim", "vim tetris"])("becomes compact, without the tagline, after %s", (command) => {
+  it.each(["ls", "cd drills", "vim", "vim tetris"])("becomes compact, without the tagline, after %s", (command) => {
     const root = load();
     run(command);
     expect(isCompact(root)).toBe(true);
@@ -248,7 +248,7 @@ describe("home logo", () => {
     expect(isCompact(root)).toBe(false);
   });
 
-  it("stays full size after launching and quitting a game from a fresh home", () => {
+  it("stays full size after launching and quitting a drill from a fresh home", () => {
     const root = load();
     run("vim hjkl");
     press("Escape");
@@ -257,7 +257,7 @@ describe("home logo", () => {
     expect(isCompact(root)).toBe(false);
   });
 
-  it("stays compact for the visit, through empty Enters and a game", () => {
+  it("stays compact for the visit, through empty Enters and a drill", () => {
     const root = load();
     run("ls");
     press("Enter");
@@ -276,11 +276,11 @@ describe("home logo", () => {
   });
 });
 
-describe("hjkl splash", () => {
-  it("vim hjkl opens the splash with the key legend and no buttons", () => {
+describe("hjkl instructions screen", () => {
+  it("vim hjkl opens the instructions screen with the key legend and no buttons", () => {
     const root = load();
     run("vim hjkl");
-    expect(screenOf(root)).toBe("screen-landing");
+    expect(screenOf(root)).toBe("screen-instructions");
     const legend = textOf(root, ".key-legend")!.replace(/\s+/g, " ").trim();
     expect(legend).toBe("h left j down k up l right");
     expect(root.querySelector("button")).toBeNull();
@@ -294,7 +294,7 @@ describe("hjkl splash", () => {
     expect(root.textContent).not.toMatch(/best/i);
   });
 
-  it("shows a hint that Enter starts the drill", () => {
+  it("shows a hint that Enter starts a run", () => {
     const root = load();
     run("vim hjkl");
     expect(textOf(root, ".hint")).toBe("press Enter to start");
@@ -305,39 +305,39 @@ describe("hjkl splash", () => {
     const root = load();
     run("vim hjkl");
     press("l");
-    expect(screenOf(root)).toBe("screen-landing");
+    expect(screenOf(root)).toBe("screen-instructions");
   });
 
-  it("Enter begins a fresh drill with the timer at zero", () => {
+  it("Enter begins a fresh run with the timer at zero", () => {
     const root = load();
     run("vim hjkl");
     press("Enter");
-    expect(screenOf(root)).toBe("screen-drill");
-    expect(textOf(root, ".progress")).toBe(`0/${WIN_TOUCHES}`);
+    expect(screenOf(root)).toBe("screen-play");
+    expect(textOf(root, ".progress")).toBe(`0/${HITS_TO_WIN}`);
     expect(textOf(root, ".timer")).toBe("0.00s");
   });
 });
 
-describe("hjkl drill", () => {
+describe("hjkl play screen", () => {
   it("asks the player to reach the ✕ using h j k l", () => {
     const root = load();
     startHjkl();
-    const instructions = root.querySelector(".ag-drill > :first-child")!;
+    const instructions = root.querySelector(".ag-play > :first-child")!;
     expect(instructions.textContent).toBe("reach the ✕ using h j k l");
     expect(instructions.querySelector(".ag-key")!.textContent).toBe("h j k l");
   });
 
-  it("draws the board as rows of dots, with one player cursor and one ✕ target", () => {
+  it("draws the board as rows of dots, with one cursor and one ✕ target", () => {
     const root = load();
     startHjkl();
     const board = root.querySelector(".ag-board")!;
     const rows = board.textContent!.split("\n");
-    expect(rows).toHaveLength(GRID_SIZE);
-    expect(board.querySelectorAll(".board-cell")).toHaveLength(GRID_SIZE * GRID_SIZE);
-    expect(board.querySelectorAll(`${PLAYER}.ag-cursor`)).toHaveLength(1);
+    expect(rows).toHaveLength(BOARD_SIZE);
+    expect(board.querySelectorAll(".board-cell")).toHaveLength(BOARD_SIZE * BOARD_SIZE);
+    expect(board.querySelectorAll(`${CURSOR}.ag-cursor`)).toHaveLength(1);
     expect([...board.querySelectorAll(TARGET)].map((target) => target.textContent)).toEqual(["✕"]);
     const dots = [...board.querySelectorAll(".board-cell")].filter((cell) => cell.textContent === "·");
-    expect(dots).toHaveLength(GRID_SIZE * GRID_SIZE - 2);
+    expect(dots).toHaveLength(BOARD_SIZE * BOARD_SIZE - 2);
   });
 
   it("shows the timer and progress beneath the board", () => {
@@ -358,24 +358,24 @@ describe("hjkl drill", () => {
     vi.advanceTimersByTime(1500);
     expect(parseFloat(textOf(root, ".timer")!)).toBeGreaterThanOrEqual(1.5);
 
-    while (textOf(root, ".progress") === `0/${WIN_TOUCHES}`) stepTowardTarget(root);
-    expect(textOf(root, ".progress")).toBe(`1/${WIN_TOUCHES}`);
+    while (textOf(root, ".progress") === `0/${HITS_TO_WIN}`) stepTowardTarget(root);
+    expect(textOf(root, ".progress")).toBe(`1/${HITS_TO_WIN}`);
   });
 
-  it("keeps the player cursor in the stage that greys while the command line is open", () => {
+  it("keeps the cursor in the stage that greys while the command line is open", () => {
     const root = load();
     startHjkl();
-    const player = () => root.querySelector(`${PLAYER}.ag-cursor`)!;
-    expect(player().closest(".game-greyed")).toBeNull();
+    const cursor = () => root.querySelector(`${CURSOR}.ag-cursor`)!;
+    expect(cursor().closest(".drill-greyed")).toBeNull();
     press("Escape");
-    expect(player().closest(".game-greyed")).not.toBeNull();
+    expect(cursor().closest(".drill-greyed")).not.toBeNull();
     press("Escape");
-    expect(player().closest(".game-greyed")).toBeNull();
+    expect(cursor().closest(".drill-greyed")).toBeNull();
   });
 });
 
-describe("game frame", () => {
-  it("pins a statusline with the mode and the game's name under the game", () => {
+describe("drill frame", () => {
+  it("pins a statusline with the mode and the drill's name under the drill", () => {
     const root = load();
     run("vim hjkl");
     expect(textOf(root, ".ag-statusline .ag-mode")).toBe("TMP");
@@ -402,7 +402,7 @@ describe("game frame", () => {
   });
 
   it.each([
-    ["splash", () => run("vim hjkl")],
+    ["instructions", () => run("vim hjkl")],
     ["play", startHjkl],
   ])("on %s with the command line closed, hints at Esc then :q! to go home without saving", (_screen, open) => {
     const root = load();
@@ -413,7 +413,7 @@ describe("game frame", () => {
   });
 
   it.each([
-    ["splash", () => run("vim hjkl")],
+    ["instructions", () => run("vim hjkl")],
     ["play", startHjkl],
   ])("on %s with the command line open, shows what's typed with a cursor and hints at :q!", (_screen, open) => {
     const root = load();
@@ -444,12 +444,12 @@ describe("game frame", () => {
   });
 });
 
-describe("command mode on the splash", () => {
-  it("Esc greys the splash and opens the command line", () => {
+describe("command mode on the instructions screen", () => {
+  it("Esc greys the instructions screen and opens the command line", () => {
     const root = load();
     run("vim hjkl");
     press("Escape");
-    expect(root.querySelector(".game-greyed")).not.toBeNull();
+    expect(root.querySelector(".drill-greyed")).not.toBeNull();
     expect(textOf(root, ".cmdline-input")).toBe("");
     expect(textOf(root, ".cmdline-hint")).toBe("type :q! to quit");
   });
@@ -462,35 +462,35 @@ describe("command mode on the splash", () => {
     expect(screenOf(root)).toBe("home");
   });
 
-  it("an unknown command shows an error and stays on the splash", () => {
+  it("an unknown command shows an error and stays on the instructions screen", () => {
     const root = load();
     run("vim hjkl");
     press("Escape");
     run(":wq");
     expect(textOf(root, ".ag-cmdline .ag-error")).toBe(":wq isn't supported in argot (use :q! to quit)");
-    expect(screenOf(root)).toBe("screen-landing");
+    expect(screenOf(root)).toBe("screen-instructions");
   });
 
-  it("Esc goes back to the splash, where Enter still starts the drill", () => {
+  it("Esc goes back to the instructions screen, where Enter still starts a run", () => {
     const root = load();
     run("vim hjkl");
     press("Escape");
     press("Escape");
-    expect(root.querySelector(".game-greyed")).toBeNull();
+    expect(root.querySelector(".drill-greyed")).toBeNull();
     expect(root.querySelector(".cmdline-input")).toBeNull();
-    expect(screenOf(root)).toBe("screen-landing");
+    expect(screenOf(root)).toBe("screen-instructions");
 
     press("Enter");
-    expect(screenOf(root)).toBe("screen-drill");
+    expect(screenOf(root)).toBe("screen-play");
   });
 });
 
-describe("command mode in the drill", () => {
-  it("Esc greys the game and opens an empty command line with a hint to quit", () => {
+describe("command mode on the play screen", () => {
+  it("Esc greys the drill and opens an empty command line with a hint to quit", () => {
     const root = load();
     startHjkl();
     press("Escape");
-    expect(root.querySelector(".game-greyed")).not.toBeNull();
+    expect(root.querySelector(".drill-greyed")).not.toBeNull();
     expect(textOf(root, ".cmdline-input")).toBe("");
     expect(textOf(root, ".cmdline-hint")).toBe("type :q! to quit");
   });
@@ -508,11 +508,11 @@ describe("command mode in the drill", () => {
   it("hjkl type on the command line instead of moving the cursor", () => {
     const root = load();
     startHjkl();
-    const start = cellIndex(root, PLAYER);
+    const start = cellIndex(root, CURSOR);
     const key = keyTowardTarget(root);
     press("Escape");
     press(key);
-    expect(cellIndex(root, PLAYER)).toBe(start);
+    expect(cellIndex(root, CURSOR)).toBe(start);
     expect(textOf(root, ".cmdline-input")).toBe(key);
   });
 
@@ -525,21 +525,21 @@ describe("command mode in the drill", () => {
     expect(parseFloat(textOf(root, ".timer")!)).toBeGreaterThanOrEqual(2);
   });
 
-  it("Esc closes the command line and resumes the drill where it was", () => {
+  it("Esc closes the command line and resumes the run where it was", () => {
     const root = load();
     startHjkl();
     stepTowardTarget(root);
-    const cursor = cellIndex(root, PLAYER);
+    const cursor = cellIndex(root, CURSOR);
     press("Escape");
     type(":q");
     press("Escape");
-    expect(root.querySelector(".game-greyed")).toBeNull();
+    expect(root.querySelector(".drill-greyed")).toBeNull();
     expect(root.querySelector(".cmdline-input")).toBeNull();
     expect(textOf(root, ".cmdline-hint")).toBe(PLAY_HINT);
-    expect(cellIndex(root, PLAYER)).toBe(cursor);
+    expect(cellIndex(root, CURSOR)).toBe(cursor);
 
     stepTowardTarget(root);
-    expect(cellIndex(root, PLAYER)).not.toBe(cursor);
+    expect(cellIndex(root, CURSOR)).not.toBe(cursor);
   });
 
   it(":q! abandons the run and returns home without touching the best time", () => {
@@ -568,9 +568,9 @@ describe("command mode in the drill", () => {
     run(command);
     expect(textOf(root, ".ag-cmdline .ag-error")).toBe(error);
     expect(root.querySelector(".cmdline-hint")).toBeNull();
-    expect(root.querySelector(".game-greyed")).not.toBeNull();
+    expect(root.querySelector(".drill-greyed")).not.toBeNull();
     expect(textOf(root, ".cmdline-input")).toBe("");
-    expect(screenOf(root)).toBe("screen-drill");
+    expect(screenOf(root)).toBe("screen-play");
   });
 
   it("never labels play or the command line as insert mode", () => {
@@ -599,11 +599,11 @@ describe("command mode in the drill", () => {
   it("ignores held-down and Ctrl/Cmd/Alt-modified hjkl", () => {
     const root = load();
     startHjkl();
-    const start = cellIndex(root, PLAYER);
+    const start = cellIndex(root, CURSOR);
     for (const key of "hjkl") {
       for (const init of [{ repeat: true }, { ctrlKey: true }, { metaKey: true }, { altKey: true }]) {
         press(key, init);
-        expect(cellIndex(root, PLAYER)).toBe(start);
+        expect(cellIndex(root, CURSOR)).toBe(start);
       }
     }
   });
@@ -618,7 +618,7 @@ describe("hjkl results", () => {
     expect(textOf(root, ".final-time")).toMatch(/^\d+\.\d\ds$/);
     expect(root.querySelector(".new-best")).not.toBeNull();
     expect(textOf(root, ".cmdline-input")).toBe("");
-    expect(root.querySelector(".game-greyed")).toBeNull();
+    expect(root.querySelector(".drill-greyed")).toBeNull();
     expect(root.querySelector("button")).toBeNull();
 
     type(":w");
@@ -707,7 +707,7 @@ describe("hjkl results", () => {
 });
 
 describe("full flow", () => {
-  it("runs Home → Splash → Drill → Results → Home → Splash → Drill", () => {
+  it("runs Home → Instructions → Play → Results → Home → Instructions → Play", () => {
     const root = load();
     startHjkl();
     playToCompletion(root);
@@ -717,8 +717,8 @@ describe("full flow", () => {
     expect(screenOf(root)).toBe("home");
 
     startHjkl();
-    expect(screenOf(root)).toBe("screen-drill");
-    expect(textOf(root, ".progress")).toBe(`0/${WIN_TOUCHES}`);
+    expect(screenOf(root)).toBe("screen-play");
+    expect(textOf(root, ".progress")).toBe(`0/${HITS_TO_WIN}`);
     expect(textOf(root, ".timer")).toBe("0.00s");
 
     playToCompletion(root);
@@ -742,17 +742,17 @@ describe("full flow", () => {
 });
 
 describe("loading the site", () => {
-  it("lands on home after reloading on the splash", () => {
+  it("lands on home after reloading on the instructions screen", () => {
     load();
     run("vim hjkl");
     expect(screenOf(load())).toBe("home");
   });
 
-  it("lands on home after reloading mid-drill", () => {
+  it("lands on home after reloading mid-run", () => {
     const first = load();
     startHjkl();
     stepTowardTarget(first);
-    expect(screenOf(first)).toBe("screen-drill");
+    expect(screenOf(first)).toBe("screen-play");
 
     expect(screenOf(load())).toBe("home");
   });
@@ -768,7 +768,7 @@ describe("loading the site", () => {
 });
 
 describe("key routing", () => {
-  it("keeps a single keydown listener, the shell's, through a whole game", () => {
+  it("keeps a single keydown listener, the shell's, through a whole drill", () => {
     const root = load();
     const keydownListeners = () => listeners.filter(([type]) => type === "keydown").length;
     run("vim hjkl");

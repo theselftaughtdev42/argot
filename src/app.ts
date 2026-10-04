@@ -1,12 +1,12 @@
-import { games, type GameScreen, type GameSession } from "./games/registry";
+import { drills, type DrillScreen, type DrillSession } from "./drills/registry";
 import { commands, type Shell } from "./shell/commands";
-import { renderCommandLine, renderGameFrame, renderHome, type HomeState, type ShellOutput } from "./shell/renderer";
+import { renderCommandLine, renderDrillFrame, renderHome, type HomeState, type ShellOutput } from "./shell/renderer";
 
-type RunningGame = {
-  session: GameSession | null;
+type RunningDrill = {
+  session: DrillSession | null;
   container: HTMLElement;
   cmdline: HTMLElement;
-  screen: GameScreen;
+  screen: DrillScreen;
   /** What's typed on the command line, or null while it's closed. */
   command: string | null;
   /** The last command's error, shown in place of the hint. */
@@ -15,37 +15,37 @@ type RunningGame = {
 
 export function mountApp(root: HTMLElement): void {
   const home: HomeState = { input: "", last: null, compact: false };
-  let game: RunningGame | null = null;
+  let drill: RunningDrill | null = null;
 
-  function renderGame(): void {
-    if (!game) return;
+  function renderDrill(): void {
+    if (!drill) return;
     // Greying pulls attention from play to the command line; results has no play to dim.
-    game.container.classList.toggle("game-greyed", game.command !== null && game.screen !== "results");
-    renderCommandLine(game.cmdline, game.screen, game.command, game.error);
+    drill.container.classList.toggle("drill-greyed", drill.command !== null && drill.screen !== "results");
+    renderCommandLine(drill.cmdline, drill.screen, drill.command, drill.error);
   }
 
-  function launchGame(name: string): void {
-    const { stage, cmdline } = renderGameFrame(root, name);
-    const running: RunningGame = {
+  function launchDrill(name: string): void {
+    const { stage, cmdline } = renderDrillFrame(root, name);
+    const running: RunningDrill = {
       container: stage,
       cmdline,
       session: null,
-      screen: "splash",
+      screen: "instructions",
       command: null,
       error: null,
     };
-    game = running;
-    running.session = games.get(name)!(running.container, (screen) => {
+    drill = running;
+    running.session = drills.get(name)!(running.container, (screen) => {
       running.screen = screen;
       // Results has nothing to play, so it opens straight onto the command line.
       if (screen === "results") running.command = "";
-      renderGame();
+      renderDrill();
     });
   }
 
-  function quitGame(running: RunningGame): void {
+  function quitDrill(running: RunningDrill): void {
     running.session?.destroy();
-    game = null;
+    drill = null;
     renderHome(root, home);
   }
 
@@ -59,62 +59,62 @@ export function mountApp(root: HTMLElement): void {
     const shell: Shell = {
       list: (items) => show({ kind: "list", items }),
       error: (text) => show({ kind: "error", text }),
-      launchGame,
+      launchDrill,
     };
-    // Cleared first so a game launch leaves a clean home to come back to.
+    // Cleared first so a drill launch leaves a clean home to come back to.
     home.last = null;
     const command = commands.get(name);
     if (command) command.run(args, shell);
     else shell.error(`${name}: command not found`);
-    if (game) return;
+    if (drill) return;
     // Once the visitor has run a command, its output matters more than the logo.
     home.compact = true;
   }
 
-  function handleGameKeydown(game: RunningGame, event: KeyboardEvent): void {
-    if (game.command === null) {
+  function handleDrillKeydown(drill: RunningDrill, event: KeyboardEvent): void {
+    if (drill.command === null) {
       if (event.key !== "Escape") {
-        game.session?.handleKey(event);
+        drill.session?.handleKey(event);
         return;
       }
-      if (game.screen === "results") return;
-      game.command = "";
-    } else if (event.key === "Escape" && game.screen === "results") {
-      // Results has no game to go back to, so Esc only clears the line.
-      game.command = "";
-      game.error = null;
+      if (drill.screen === "results") return;
+      drill.command = "";
+    } else if (event.key === "Escape" && drill.screen === "results") {
+      // Results has no drill to go back to, so Esc only clears the line.
+      drill.command = "";
+      drill.error = null;
     } else if (event.key === "Escape") {
-      game.command = null;
-      game.error = null;
+      drill.command = null;
+      drill.error = null;
     } else if (event.key === "Enter") {
-      if (game.command === "") return;
-      if (game.command === ":q!") {
-        quitGame(game);
+      if (drill.command === "") return;
+      if (drill.command === ":q!") {
+        quitDrill(drill);
         return;
       }
-      if (game.command === ":wq" && game.screen === "results") {
-        game.session?.save();
-        quitGame(game);
+      if (drill.command === ":wq" && drill.screen === "results") {
+        drill.session?.save();
+        quitDrill(drill);
         return;
       }
-      const supported = game.screen === "results" ? "use :wq or :q!" : "use :q! to quit";
-      game.error = `${game.command} isn't supported in argot (${supported})`;
-      game.command = "";
+      const supported = drill.screen === "results" ? "use :wq or :q!" : "use :q! to quit";
+      drill.error = `${drill.command} isn't supported in argot (${supported})`;
+      drill.command = "";
     } else if (event.key === "Backspace") {
-      game.command = game.command.slice(0, -1);
+      drill.command = drill.command.slice(0, -1);
     } else if (event.key.length === 1) {
-      game.command += event.key;
+      drill.command += event.key;
     } else {
       return;
     }
-    renderGame();
+    renderDrill();
   }
 
   function handleHomeKeydown(event: KeyboardEvent): void {
     if (event.key === "Enter") {
       runCommand(home.input.trim());
       home.input = "";
-      if (game) return;
+      if (drill) return;
     } else if (event.key === "Backspace") {
       home.input = home.input.slice(0, -1);
     } else if (event.key.length === 1) {
@@ -127,7 +127,7 @@ export function mountApp(root: HTMLElement): void {
 
   function handleKeydown(event: KeyboardEvent): void {
     if (event.ctrlKey || event.metaKey || event.altKey) return;
-    if (game) handleGameKeydown(game, event);
+    if (drill) handleDrillKeydown(drill, event);
     else handleHomeKeydown(event);
   }
 

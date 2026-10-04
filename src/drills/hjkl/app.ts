@@ -1,25 +1,23 @@
-import { createGame, move, type Direction, type GameState } from "./engine";
+import { createRun, move, type Direction, type RunState } from "./engine";
 import { directionFor } from "./input";
 import { Timer } from "./timer";
 import { getBestTime, isNewBest as wouldBeNewBest, saveBestTimeIfBetter } from "./storage";
-import { renderLanding, renderDrill, renderElapsed, renderResults } from "./renderer";
-import type { GameScreen, GameSession } from "../registry";
+import { renderInstructions, renderPlay, renderElapsed, renderResults } from "./renderer";
+import type { DrillScreen, DrillSession } from "../registry";
 
-type Screen = "landing" | "drill" | "results";
-
-export function mountHjklGame(
+export function mountHjklDrill(
   root: HTMLElement,
-  onScreenChange: (screen: GameScreen) => void,
-): GameSession {
-  let state: GameState = createGame();
-  let screen: Screen = "landing";
+  onScreenChange: (screen: DrillScreen) => void,
+): DrillSession {
+  let state: RunState = createRun();
+  let screen: DrillScreen = "instructions";
   let finalTimeMs = 0;
   let isNewBest = false;
   let animationFrame = 0;
   const timer = new Timer();
 
   function tick(): void {
-    if (screen !== "drill") return;
+    if (screen !== "play") return;
     renderElapsed(root, timer.elapsedMs());
     animationFrame = requestAnimationFrame(tick);
   }
@@ -36,32 +34,32 @@ export function mountHjklGame(
       onScreenChange("results");
       renderResults(root, finalTimeMs, isNewBest, getBestTime());
     } else {
-      renderDrill(root, state, timer.elapsedMs());
+      renderPlay(root, state, timer.elapsedMs());
     }
   }
 
-  function startDrill(): void {
-    state = createGame();
+  function startRun(): void {
+    state = createRun();
     timer.reset();
-    screen = "drill";
+    screen = "play";
     onScreenChange("play");
-    renderDrill(root, state, timer.elapsedMs());
+    renderPlay(root, state, timer.elapsedMs());
     animationFrame = requestAnimationFrame(tick);
   }
 
-  function showLanding(): void {
-    screen = "landing";
-    onScreenChange("splash");
-    renderLanding(root);
+  function showInstructions(): void {
+    screen = "instructions";
+    onScreenChange("instructions");
+    renderInstructions(root);
   }
 
-  showLanding();
+  showInstructions();
 
   return {
     handleKey(event) {
-      if (screen === "landing" && event.key === "Enter" && !event.repeat) {
-        startDrill();
-      } else if (screen === "drill") {
+      if (screen === "instructions" && event.key === "Enter" && !event.repeat) {
+        startRun();
+      } else if (screen === "play") {
         const direction = directionFor(event);
         if (direction) handleMove(direction);
       }
