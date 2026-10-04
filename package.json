@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "description": "tools for learning vim",
+  "description": "train your fingers to think in vim.",
   "packageManager": "pnpm@12.8.1",
   "scripts": {
     "dev": "vite",

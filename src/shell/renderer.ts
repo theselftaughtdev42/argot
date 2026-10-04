@@ -45,7 +45,7 @@ export function renderHome(root: HTMLElement, { input, last, compact }: HomeStat
   const brand = `
     <header class="ag-brand${compact ? " ag-brand--compact" : ""}">
       <h1 class="ag-logo">argot</h1>
-      ${compact ? "" : `<div class="ag-tagline">learn to speak vim. no mouse, just keys.</div>`}
+      ${compact ? "" : `<div class="ag-tagline">train your fingers to think in vim.</div>`}
     </header>
   `;
   root.innerHTML = `

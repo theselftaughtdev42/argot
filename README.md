@@ -1,2 +1,2 @@
 # argot
-tools for learning vim
+train your fingers to think in vim.

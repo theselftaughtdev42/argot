@@ -143,7 +143,7 @@ describe("home command line", () => {
   it("greets a fresh visit with the logo, tagline, a hint to type argot, and the prompt's cursor", () => {
     const root = load();
     expect(textOf(root, ".ag-logo")).toBe("argot");
-    expect(textOf(root, ".ag-tagline")).toBe("learn to speak vim. no mouse, just keys.");
+    expect(textOf(root, ".ag-tagline")).toBe("train your fingers to think in vim.");
     expect(textOf(root, ".home-hint")).toBe(ARGOT_HINT);
     expect(keysIn(root, ".home-hint")).toEqual(["argot", "enter"]);
     expect(root.querySelector(".prompt-input + .ag-cursor")).not.toBeNull();
