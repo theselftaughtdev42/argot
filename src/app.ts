@@ -1,11 +1,21 @@
 import { drills, type DrillSession } from "./drills/registry";
-import { commands, type Shell } from "./shell/commands";
+import {
+  ARGOT_TIP,
+  drillCommands,
+  findCommand,
+  homeCommands,
+  listCommands,
+  runCommandLine,
+  type DrillShell,
+  type Shell,
+} from "./shell/commands";
 import {
   renderCommandLine,
   renderDrillFrame,
   renderHelp,
   renderHome,
   renderStatusName,
+  type CommandResponse,
   type FrameScreen,
   type HomeState,
   type ShellOutput,
@@ -21,8 +31,8 @@ type RunningDrill = {
   screen: FrameScreen;
   /** What's typed on the command line, or null while it's closed. */
   command: string | null;
-  /** The last command's error, shown in place of the hint. */
-  error: string | null;
+  /** What the last command showed, until Esc or the next command. */
+  response: CommandResponse | null;
 };
 
 export function mountApp(root: HTMLElement): void {
@@ -31,16 +41,16 @@ export function mountApp(root: HTMLElement): void {
 
   function renderDrill(): void {
     if (!drill) return;
-    // Greying pulls attention from the stage to the command line; results has nothing to read past.
-    drill.container.classList.toggle("drill-greyed", drill.command !== null && drill.screen !== "results");
+    // Greying pulls attention from the stage to the command line.
+    drill.container.classList.toggle("drill-greyed", drill.command !== null);
     renderStatusName(drill.statusName, drill.name, drill.screen);
-    renderCommandLine(drill.cmdline, drill.screen, drill.command, drill.error);
+    renderCommandLine(drill.cmdline, drill.screen, drill.command, drill.response);
   }
 
   /** Mounts a fresh run of the drill into the stage, with the command line closed. */
   function startRun(running: RunningDrill): void {
     running.command = null;
-    running.error = null;
+    running.response = null;
     running.session = drills.get(running.name)!.mount(running.container, (screen) => {
       running.screen = screen;
       renderDrill();
@@ -53,7 +63,7 @@ export function mountApp(root: HTMLElement): void {
     running.session = null;
     running.screen = "help";
     running.command = null;
-    running.error = null;
+    running.response = null;
     renderHelp(running.container, drills.get(running.name)!.help);
     renderDrill();
   }
@@ -68,7 +78,7 @@ export function mountApp(root: HTMLElement): void {
       session: null,
       screen: "play",
       command: null,
-      error: null,
+      response: null,
     };
     drill = running;
     startRun(running);
@@ -80,40 +90,23 @@ export function mountApp(root: HTMLElement): void {
     renderHome(root, home);
   }
 
-  /** What `:q` says when there's something to lose, like vim's E37, naming the commands to use instead. */
-  function noWriteError(screen: FrameScreen): string {
-    return screen === "results"
-      ? "E37: No write since last change (use :wq to save or :q! to discard)"
-      : "E37: run in progress (add ! to abandon it: :q!)";
-  }
-
-  /** The commands each screen supports, for the error an unsupported one shows. */
-  function supportedCommands(screen: FrameScreen): string {
-    if (screen === "results") return "use :wq, :q! or :help";
-    if (screen === "help") return "use :q or :q!";
-    return "use :help or :q!";
-  }
-
   /** Runs what's typed on the command line, as Enter submits it. */
   function runDrillCommand(running: RunningDrill, command: string): void {
-    if (command === ":q!") {
-      quitDrill(running);
-    } else if (command === ":help") {
-      openHelp(running);
-    } else if (command === ":q" && running.screen === "help") {
-      startRun(running);
-    } else if (command === ":q" && running.screen === "play" && !running.session?.hasStarted()) {
-      // Nothing's happened yet, so there's nothing for :q to throw away.
-      quitDrill(running);
-    } else if (command === ":wq" && running.screen === "results") {
-      running.session?.save();
-      quitDrill(running);
-    } else {
-      running.error =
-        command === ":q" ? noWriteError(running.screen) : `${command} isn't supported in argot (${supportedCommands(running.screen)})`;
+    const respond = (response: CommandResponse) => {
+      running.response = response;
       running.command = "";
       renderDrill();
-    }
+    };
+    const shell: DrillShell = {
+      error: (text) => respond({ kind: "error", text }),
+      listCommands: () => respond({ kind: "commands", items: listCommands(drillCommands[running.screen]) }),
+      hasStarted: () => running.session?.hasStarted() ?? false,
+      openHelp: () => openHelp(running),
+      startRun: () => startRun(running),
+      save: () => running.session?.save(),
+      quit: () => quitDrill(running),
+    };
+    runCommandLine(running.screen, command, shell);
   }
 
   function runCommand(line: string): void {
@@ -126,13 +119,14 @@ export function mountApp(root: HTMLElement): void {
     const shell: Shell = {
       list: (items) => show({ kind: "list", items }),
       error: (text) => show({ kind: "error", text }),
+      listCommands: () => show({ kind: "commands", items: listCommands(homeCommands) }),
       launchDrill,
     };
     // Cleared first so a drill launch leaves a clean home to come back to.
     home.last = null;
-    const command = commands.get(name);
+    const command = findCommand(homeCommands, name);
     if (command) command.run(args, shell);
-    else shell.error(`${name}: command not found`);
+    else shell.error(`${name}: command not found ${ARGOT_TIP}`);
     if (drill) return;
     // Once the visitor has run a command, its output matters more than the logo.
     home.compact = true;
@@ -147,7 +141,7 @@ export function mountApp(root: HTMLElement): void {
       drill.command = "";
     } else if (event.key === "Escape") {
       drill.command = null;
-      drill.error = null;
+      drill.response = null;
     } else if (event.key === "Enter") {
       if (drill.command !== "") runDrillCommand(drill, drill.command);
       return;

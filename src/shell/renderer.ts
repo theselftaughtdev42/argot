@@ -3,7 +3,12 @@ import type { DrillScreen, Help } from "../drills/registry";
 /** What the drill frame can show in its stage: the drill's own screens, or the shell's help page. */
 export type FrameScreen = DrillScreen | "help";
 
-export type ShellOutput = { kind: "list"; items: string[] } | { kind: "error"; text: string };
+/** What a command shows after it runs: one line, like an error, or several, like `argot`'s list. */
+export type CommandResponse =
+  | { kind: "error"; text: string }
+  | { kind: "commands"; items: { usage: string; description: string }[] };
+
+export type ShellOutput = { kind: "list"; items: string[] } | CommandResponse;
 
 export type HomeState = {
   /** What's typed at the prompt. */
@@ -18,8 +23,17 @@ function escapeHtml(text: string): string {
   return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
+/** `argot`'s list: each command's usage, highlighted, beside what it does. */
+function renderCommandList(items: { usage: string; description: string }[]): string {
+  const rows = items
+    .map(({ usage, description }) => `<div><dt class="ag-key">${escapeHtml(usage)}</dt><dd>${escapeHtml(description)}</dd></div>`)
+    .join("");
+  return `<dl class="ag-commands">${rows}</dl>`;
+}
+
 function renderOutput(output: ShellOutput): string {
   if (output.kind === "error") return `<div class="ag-line ag-error">${escapeHtml(output.text)}</div>`;
+  if (output.kind === "commands") return renderCommandList(output.items);
   return `<ul class="ag-ls">${output.items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
 }
 
@@ -62,10 +76,12 @@ export function renderDrillFrame(
   root.innerHTML = `
     <main class="ag-drill">
       <div class="ag-drill__stage"></div>
-      <div class="ag-statusline">
-        <div class="ag-statusline__left"><span class="ag-mode">TMP</span><span class="statusline-drill">${escapeHtml(name)}</span></div>
+      <div class="ag-drill__foot">
+        <div class="ag-statusline">
+          <div class="ag-statusline__left"><span class="ag-mode">TMP</span><span class="statusline-drill">${escapeHtml(name)}</span></div>
+        </div>
+        <div class="ag-cmdline"></div>
       </div>
-      <div class="ag-cmdline"></div>
     </main>
   `;
   return {
@@ -84,13 +100,15 @@ const key = (text: string) => `<span class="ag-key">${text}</span>`;
 
 /**
  * The command line under a running drill: what's typed, with the cursor, while
- * it's open (`command` is null while closed), and the hint, or an error in its place.
+ * it's open (`command` is null while closed), and the hint. The last command's
+ * response takes the hint's place: an error on its line, or a list growing
+ * upward over the bottom of the stage, like vim's multi-line messages.
  */
 export function renderCommandLine(
   cmdline: HTMLElement,
   screen: FrameScreen,
   command: string | null,
-  error: string | null,
+  response: CommandResponse | null,
 ): void {
   const options =
     screen === "results"
@@ -107,7 +125,13 @@ export function renderCommandLine(
     <span class="ag-line">${
       command !== null ? `<span class="cmdline-input">${escapeHtml(command)}</span><span class="ag-cursor"></span>` : ""
     }</span>
-    ${error ? `<span class="ag-error">${escapeHtml(error)}</span>` : `<span class="ag-muted cmdline-hint">${hint}</span>`}
+    ${
+      response?.kind === "error"
+        ? `<span class="ag-error">${escapeHtml(response.text)}</span>`
+        : response?.kind === "commands"
+          ? `<div class="cmdline-response">${renderCommandList(response.items)}</div>`
+          : `<span class="ag-muted cmdline-hint">${hint}</span>`
+    }
   `;
 }
 

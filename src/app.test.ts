@@ -186,7 +186,7 @@ describe("home command line", () => {
   it("reports any other command as not found, as an error, and stays on home", () => {
     const root = load();
     run("cd drills");
-    expect(textOf(root, ".ag-error")).toBe("cd: command not found");
+    expect(textOf(root, ".ag-error")).toBe("cd: command not found (type argot for commands)");
     expect(screenOf(root)).toBe("home");
   });
 
@@ -195,7 +195,7 @@ describe("home command line", () => {
     run("ls");
     run("pwd");
     expect(root.querySelector(".ag-ls")).toBeNull();
-    expect(textOf(root, ".ag-error")).toBe("pwd: command not found");
+    expect(textOf(root, ".ag-error")).toBe("pwd: command not found (type argot for commands)");
     expect(textOf(root, ".home-hint")).toBe(LS_HINT);
   });
 
@@ -239,7 +239,7 @@ describe("home command line", () => {
   it("escapes what's typed rather than rendering it as markup", () => {
     const root = load();
     run("<b>hi</b>");
-    expect(textOf(root, ".ag-error")).toBe("<b>hi</b>: command not found");
+    expect(textOf(root, ".ag-error")).toBe("<b>hi</b>: command not found (type argot for commands)");
     expect(root.querySelector(".ag-error b")).toBeNull();
   });
 
@@ -478,23 +478,26 @@ describe("help page", () => {
     expect(screenOf(root)).toBe("home");
   });
 
-  it(":help stays on the help page and closes the command line", () => {
-    const root = load();
-    run("vim hjkl");
-    openHelp();
-    openHelp();
-    expect(screenOf(root)).toBe("screen-help");
-    expect(root.querySelector(".cmdline-input")).toBeNull();
-    expect(root.querySelector(".ag-cmdline .ag-error")).toBeNull();
-  });
-
-  it.each([":wq", ":x", "q"])("%s shows an error naming :q and :q!, and stays on help", (command) => {
+  it.each([":help", ":wq"])("%s isn't available on the help page, and stays on help", (command) => {
     const root = load();
     run("vim hjkl");
     openHelp();
     press("Escape");
     run(command);
-    expect(textOf(root, ".ag-cmdline .ag-error")).toBe(`${command} isn't supported in argot (use :q or :q!)`);
+    expect(textOf(root, ".ag-cmdline .ag-error")).toBe(
+      `${command} isn't available on the help page (type argot for commands)`,
+    );
+    expect(screenOf(root)).toBe("screen-help");
+    expect(textOf(root, ".cmdline-input")).toBe("");
+  });
+
+  it.each([":x", "q"])("%s is an unknown command, and stays on help", (command) => {
+    const root = load();
+    run("vim hjkl");
+    openHelp();
+    press("Escape");
+    run(command);
+    expect(textOf(root, ".ag-cmdline .ag-error")).toBe(`E492: Not an editor command: ${command} (type argot for commands)`);
     expect(screenOf(root)).toBe("screen-help");
   });
 });
@@ -663,12 +666,12 @@ describe("drill frame", () => {
     expect(root.querySelector(".cmdline-input + .ag-cursor")).not.toBeNull();
   });
 
-  it("shows an unsupported command's error in place of the hint", () => {
+  it("shows an unknown command's error in place of the hint", () => {
     const root = load();
     run("vim hjkl");
     press("Escape");
     run(":x");
-    expect(textOf(root, ".ag-cmdline .ag-error")).toBe(":x isn't supported in argot (use :help or :q!)");
+    expect(textOf(root, ".ag-cmdline .ag-error")).toBe("E492: Not an editor command: :x (type argot for commands)");
     expect(root.querySelector(".cmdline-hint")).toBeNull();
   });
 });
@@ -789,10 +792,11 @@ describe("command mode on the play screen", () => {
   });
 
   it.each([
-    [":wq", ":wq isn't supported in argot (use :help or :q!)"],
-    [":x", ":x isn't supported in argot (use :help or :q!)"],
-    ["q!", "q! isn't supported in argot (use :help or :q!)"],
-  ])("%s shows an error naming what is supported, in place of the hint, and stays greyed", (command, error) => {
+    [":wq", ":wq isn't available on the play screen (type argot for commands)"],
+    [":x", "E492: Not an editor command: :x (type argot for commands)"],
+    [":w", "E492: Not an editor command: :w (type argot for commands)"],
+    ["q!", "E492: Not an editor command: q! (type argot for commands)"],
+  ])("%s shows an error, in place of the hint, and stays greyed", (command, error) => {
     const root = load();
     run("vim hjkl");
     press("Escape");
@@ -866,10 +870,12 @@ describe("hjkl results", () => {
     expect(textOf(root, ".cmdline-input")).toBe(":w");
   });
 
-  it("doesn't grey results while the command line is open", () => {
+  it("greys results while the command line is open", () => {
     const root = load();
     run("vim hjkl");
     playToCompletion(root);
+    press("Escape");
+    expect(root.querySelector(".drill-greyed .screen-results")).not.toBeNull();
     press("Escape");
     expect(root.querySelector(".drill-greyed")).toBeNull();
   });
@@ -914,13 +920,13 @@ describe("hjkl results", () => {
     expect(root.querySelector(".best-time")).toBeNull();
   });
 
-  it.each([":w", ":x", "wq"])("%s shows an error naming :wq, :q! and :help, and stays on results", (command) => {
+  it.each([":w", ":x", "wq"])("%s is an unknown command, and stays on results", (command) => {
     const root = load();
     run("vim hjkl");
     playToCompletion(root);
     press("Escape");
     run(command);
-    expect(textOf(root, ".ag-cmdline .ag-error")).toBe(`${command} isn't supported in argot (use :wq, :q! or :help)`);
+    expect(textOf(root, ".ag-cmdline .ag-error")).toBe(`E492: Not an editor command: ${command} (type argot for commands)`);
     expect(textOf(root, ".cmdline-input")).toBe("");
     expect(screenOf(root)).toBe("screen-results");
   });
@@ -953,6 +959,173 @@ describe("hjkl results", () => {
     playToCompletion(reloaded);
     expect(reloaded.querySelector(".new-best")).not.toBeNull();
     expect(reloaded.querySelector(".best-time")).toBeNull();
+  });
+});
+
+/** `argot`'s list, as each command's usage and description. */
+function commandList(root: HTMLElement, selector: string): [string, string][] {
+  return [...root.querySelectorAll(`${selector} .ag-commands > div`)].map((row) => [
+    row.querySelector("dt.ag-key")!.textContent!,
+    row.querySelector("dd")!.textContent!,
+  ]);
+}
+
+const RESPONSE = ".cmdline-response";
+
+describe("argot at home", () => {
+  const HOME_COMMANDS = [
+    ["ls", "list drills"],
+    ["vim <drill>", "start a drill"],
+    ["argot", "list the commands you can use here"],
+  ];
+
+  it.each(["argot", ":argot"])("%s lists ls, vim <drill> and argot, with what each does", (command) => {
+    const root = load();
+    run(command);
+    expect(commandList(root, ".ag-home")).toEqual(HOME_COMMANDS);
+    expect(root.querySelector(".ag-error")).toBeNull();
+    expect(screenOf(root)).toBe("home");
+  });
+
+  it("never lists :argot", () => {
+    const root = load();
+    run("argot");
+    expect(root.textContent).not.toContain(":argot");
+  });
+
+  it.each(["argot foo", ":argot foo"])("%s is an error, not a list", (command) => {
+    const root = load();
+    run(command);
+    expect(textOf(root, ".ag-error")).toBe("argot: too many arguments (type argot for commands)");
+    expect(root.querySelector(".ag-commands")).toBeNull();
+  });
+
+  it("the next command replaces the list", () => {
+    const root = load();
+    run("argot");
+    run("ls");
+    expect(root.querySelector(".ag-commands")).toBeNull();
+    expect(root.querySelector(".ag-ls")).not.toBeNull();
+  });
+});
+
+describe("argot on the command line", () => {
+  it.each(["argot", ":argot"])("%s on play lists play's commands above the command line", (command) => {
+    const root = load();
+    run("vim hjkl");
+    press("Escape");
+    run(command);
+    expect(commandList(root, RESPONSE)).toEqual([
+      [":help", "open the drill's instructions, ending the run"],
+      [":q", "back to home, before the first move"],
+      [":q!", "back to home, abandoning the run"],
+      ["argot", "list the commands you can use here"],
+    ]);
+    expect(root.querySelector(".cmdline-hint")).toBeNull();
+    expect(root.querySelector(".ag-cmdline .ag-error")).toBeNull();
+    expect(textOf(root, ".cmdline-input")).toBe("");
+    expect(screenOf(root)).toBe("screen-play");
+  });
+
+  it("on help lists help's commands, where :q goes back to the drill", () => {
+    const root = load();
+    run("vim hjkl");
+    openHelp();
+    press("Escape");
+    run("argot");
+    expect(commandList(root, RESPONSE)).toEqual([
+      [":q", "back to the drill"],
+      [":q!", "back to home"],
+      ["argot", "list the commands you can use here"],
+    ]);
+  });
+
+  it("on results lists results' commands", () => {
+    const root = load();
+    run("vim hjkl");
+    playToCompletion(root);
+    press("Escape");
+    run("argot");
+    expect(commandList(root, RESPONSE).map(([usage]) => usage)).toEqual([":wq", ":q!", ":q", ":help", "argot"]);
+  });
+
+  it("never lists :argot", () => {
+    const root = load();
+    run("vim hjkl");
+    press("Escape");
+    run(":argot");
+    expect(textOf(root, RESPONSE)).not.toContain(":argot");
+  });
+
+  it.each(["argot foo", ":argot foo"])("%s is an unknown command", (command) => {
+    const root = load();
+    run("vim hjkl");
+    press("Escape");
+    run(command);
+    expect(textOf(root, ".ag-cmdline .ag-error")).toBe(`E492: Not an editor command: ${command} (type argot for commands)`);
+    expect(root.querySelector(RESPONSE)).toBeNull();
+  });
+
+  it("sits in the drill frame's foot, over the stage, leaving the stage in place", () => {
+    const root = load();
+    run("vim hjkl");
+    press("Escape");
+    run("argot");
+    const response = root.querySelector(RESPONSE)!;
+    expect(response.closest(".ag-drill__foot")).not.toBeNull();
+    expect(response.closest(".ag-drill__stage")).toBeNull();
+    expect(root.querySelector(".ag-drill__stage .screen-play")).not.toBeNull();
+  });
+
+  it("stays up while the next command is typed, and the next command replaces it", () => {
+    const root = load();
+    run("vim hjkl");
+    stepTowardTarget(root);
+    press("Escape");
+    run("argot");
+    type(":q");
+    expect(root.querySelector(RESPONSE)).not.toBeNull();
+    expect(textOf(root, ".cmdline-input")).toBe(":q");
+
+    press("Enter");
+    expect(root.querySelector(RESPONSE)).toBeNull();
+    expect(textOf(root, ".ag-cmdline .ag-error")).toBe(PLAY_E37);
+  });
+
+  it("an error is replaced by the list", () => {
+    const root = load();
+    run("vim hjkl");
+    press("Escape");
+    run(":x");
+    run("argot");
+    expect(root.querySelector(".ag-cmdline .ag-error")).toBeNull();
+    expect(root.querySelector(RESPONSE)).not.toBeNull();
+  });
+
+  it("Esc closes the list and the command line, and hands keys back to the stage", () => {
+    const root = load();
+    run("vim hjkl");
+    press("Escape");
+    run("argot");
+    press("Escape");
+    expect(root.querySelector(RESPONSE)).toBeNull();
+    expect(root.querySelector(".cmdline-input")).toBeNull();
+    expect(root.querySelector(".drill-greyed")).toBeNull();
+    expect(hintParts(root)).toEqual(PLAY_HINT);
+
+    const cursor = cellIndex(root, CURSOR);
+    stepTowardTarget(root);
+    expect(cellIndex(root, CURSOR)).not.toBe(cursor);
+  });
+
+  it("a command that changes screen clears the list", () => {
+    const root = load();
+    run("vim hjkl");
+    press("Escape");
+    run("argot");
+    run(":help");
+    expect(screenOf(root)).toBe("screen-help");
+    expect(root.querySelector(RESPONSE)).toBeNull();
   });
 });
 
