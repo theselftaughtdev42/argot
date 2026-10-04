@@ -38,6 +38,8 @@ export interface Command<S> {
   description: string;
   /** Runs with the words typed after the command's name. */
   run(args: string[], shell: S): void;
+  /** Left out of `argot`'s list, for a command that only refuses on this screen. */
+  unlisted?: boolean;
 }
 
 /** A screen's commands, keyed by the name typed to run them. */
@@ -45,6 +47,9 @@ export type CommandTable<S> = Map<string, Command<S>>;
 
 /** Tacked onto errors, pointing at the command that lists what does work. */
 export const ARGOT_TIP = "(type argot for commands)";
+
+/** ARGOT_TIP for the command line, where commands take a colon. */
+const DRILL_ARGOT_TIP = "(type :argot for commands)";
 
 /** Lists the current screen's commands. Works on every screen, as `argot` or `:argot`. */
 const argot: Command<Responder> = {
@@ -56,14 +61,17 @@ const argot: Command<Responder> = {
   },
 };
 
+/** `argot` as the command line lists it: with a colon, like the line's other commands. */
+const drillArgot: [string, Command<Responder>] = ["argot", { ...argot, usage: ":argot" }];
+
 /** The command in `table` called `name`, taking `:argot` as `argot`. */
 export function findCommand<S>(table: CommandTable<S>, name: string): Command<S> | undefined {
   return table.get(name === ":argot" ? "argot" : name);
 }
 
-/** Each command's usage and description, in the table's order, for `argot`'s list. */
+/** Each listed command's usage and description, in the table's order, for `argot`'s list. */
 export function listCommands<S>(table: CommandTable<S>): { usage: string; description: string }[] {
-  return [...table.values()].map(({ usage, description }) => ({ usage, description }));
+  return [...table.values()].filter((command) => !command.unlisted).map(({ usage, description }) => ({ usage, description }));
 }
 
 /** Every command the home prompt understands. */
@@ -110,24 +118,35 @@ export const drillCommands: Record<FrameScreen, CommandTable<DrillShell>> = {
       else shell.quit();
     }),
     drillCommand(":q!", "back to home, abandoning the run", (shell) => shell.quit()),
-    ["argot", argot],
+    drillArgot,
   ]),
   help: new Map([
     drillCommand(":q", "back to the drill", (shell) => shell.startRun()),
     drillCommand(":q!", "back to home", (shell) => shell.quit()),
-    ["argot", argot],
+    drillArgot,
   ]),
   results: new Map([
+    drillCommand(":w", "save & retry", (shell) => {
+      shell.save();
+      shell.startRun();
+    }),
     drillCommand(":wq", "save & quit", (shell) => {
       shell.save();
       shell.quit();
     }),
     drillCommand(":q!", "quit without saving", (shell) => shell.quit()),
-    drillCommand(":q", "refuses: use :wq or :q!", (shell) =>
-      shell.error("E37: No write since last change (use :wq to save or :q! to discard)"),
-    ),
+    // Typed out of habit, so it answers like vim's E37, but argot doesn't list a command that only refuses.
+    [
+      ":q",
+      {
+        usage: ":q",
+        description: "",
+        unlisted: true,
+        run: (_args, shell) => shell.error("E37: No write since last change (use :wq to save or :q! to discard)"),
+      },
+    ],
     openHelp,
-    ["argot", argot],
+    drillArgot,
   ]),
 };
 
@@ -146,6 +165,6 @@ export function runCommandLine(screen: FrameScreen, typed: string, shell: DrillS
   const command = findCommand(drillCommands[screen], typed);
   if (command) command.run([], shell);
   else if (Object.values(drillCommands).some((table) => findCommand(table, typed)))
-    shell.error(`${typed} isn't available on ${SCREEN_NAMES[screen]} ${ARGOT_TIP}`);
-  else shell.error(`E492: Not an editor command: ${typed} ${ARGOT_TIP}`);
+    shell.error(`${typed} isn't available on ${SCREEN_NAMES[screen]} ${DRILL_ARGOT_TIP}`);
+  else shell.error(`E492: Not an editor command: ${typed} ${DRILL_ARGOT_TIP}`);
 }

@@ -110,12 +110,15 @@ export function renderCommandLine(
   command: string | null,
   response: CommandResponse | null,
 ): void {
-  const options =
-    screen === "results"
-      ? [`${key(":wq")} save &amp; quit`, `${key(":q!")} quit without saving`]
+  // Each screen hints at its likeliest commands; argot lists the rest.
+  const options = [
+    ...(screen === "results"
+      ? [`${key(":w")} save &amp; retry`, `${key(":wq")} save &amp; quit`]
       : screen === "help"
-        ? [`${key(":q")} back to the drill`, `${key(":q!")} home`]
-        : [`${key(":help")} for instructions`, `${key(":q!")} back to home`];
+        ? [`${key(":q")} back to the drill`]
+        : [`${key(":help")} for instructions`]),
+    `${key(":argot")} for more`,
+  ];
   // Each option is its own element, set well apart, so they read as separate choices.
   const hint = [
     ...(command === null ? [`<span class="cmdline-hint__lead">${key("Esc")} then</span>`] : []),
