@@ -325,7 +325,7 @@ describe("hjkl instructions screen", () => {
     const root = load();
     run("vim hjkl");
     expect(manSection(root, "DESCRIPTION")).toBe(
-      "In vim, you move the cursor with h, j, k and l instead of the arrow keys, so your fingers never leave the home row. Here the arrow keys do nothing — only hjkl moves the cursor.",
+      "In vim, you move the cursor with h, j, k and l instead of the arrow keys, so your fingers never leave the home row.",
     );
   });
 

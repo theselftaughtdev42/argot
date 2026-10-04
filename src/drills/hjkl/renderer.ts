@@ -12,7 +12,7 @@ export const instructions: Instructions = {
   name: "hjkl",
   summary: "move the cursor without the arrow keys",
   description:
-    "In vim, you move the cursor with h, j, k and l instead of the arrow keys, so your fingers never leave the home row. Here the arrow keys do nothing — only hjkl moves the cursor.",
+    "In vim, you move the cursor with h, j, k and l instead of the arrow keys, so your fingers never leave the home row.",
   keys: [
     { keys: "h", action: "left" },
     { keys: "j", action: "down" },
