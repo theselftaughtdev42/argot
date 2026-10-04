@@ -296,7 +296,7 @@ describe("hjkl instructions screen", () => {
     expect(screenOf(root)).toBe("screen-instructions");
     expect(manHeadings(root)).toEqual(["NAME", "KEYS", "GOAL", "NOTES"]);
     const header = [...root.querySelectorAll(".ag-man__header > span")].map((part) => part.textContent);
-    expect(header).toEqual(["HJKL(1)", "argot drills instructions", "HJKL(1)"]);
+    expect(header).toEqual(["HJKL(1)", "Argot Drills Instructions", "HJKL(1)"]);
     expect(root.querySelector("button")).toBeNull();
   });
 
