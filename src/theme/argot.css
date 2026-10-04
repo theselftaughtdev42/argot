@@ -113,7 +113,10 @@ html, body {
 
 /* ---------- drill ---------- */
 
+/* the whole drill frame sits in the same centred column as every other screen */
 .ag-drill {
+  max-width: 760px;
+  margin-inline: auto;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
