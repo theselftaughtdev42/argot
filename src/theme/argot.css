@@ -9,6 +9,8 @@ html, body {
   background: var(--ag-bg);
   color: var(--ag-fg);
   font-family: var(--ag-font-mono);
+  /* argot is keyboard-only, so the mouse pointer would only sit over the drills. */
+  cursor: none;
 }
 
 /* ---------- screens ---------- */
