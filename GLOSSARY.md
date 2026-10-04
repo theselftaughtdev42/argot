@@ -25,6 +25,10 @@ _Avoid_: Input, terminal
 **Command**:
 What's typed at the prompt (e.g. `ls`, `vim hjkl`) or on the command line (e.g. `:help`, `:q`, `:q!`, `:wq`). Each screen has its own set of commands. `argot` (or `:argot`) works everywhere and lists the commands available on the current screen.
 
+**History**:
+The commands run at the prompt this visit, which ↑ and ↓ step back and forth through, like a shell's. It skips empty lines and a command repeated straight after itself, and is forgotten on reload.
+_Avoid_: Recall, log
+
 **Command response**:
 What a command shows after it runs: one line, like an error, or several, like `argot`'s list. On the command line, a response that takes several lines grows upward over the stage.
 _Avoid_: Output, message

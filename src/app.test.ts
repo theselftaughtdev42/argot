@@ -255,6 +255,95 @@ describe("home command line", () => {
   });
 });
 
+describe("home command history", () => {
+  const prompt = (root: HTMLElement) => textOf(root, ".prompt-input");
+
+  it("ArrowUp recalls the commands run so far, newest first, stopping at the oldest", () => {
+    const root = load();
+    run("ls");
+    run("pwd");
+    press("ArrowUp");
+    expect(prompt(root)).toBe("pwd");
+    press("ArrowUp");
+    expect(prompt(root)).toBe("ls");
+    press("ArrowUp");
+    expect(prompt(root)).toBe("ls");
+  });
+
+  it("ArrowDown steps back toward the newest, then to what was being typed", () => {
+    const root = load();
+    run("ls");
+    run("pwd");
+    type("vi");
+    press("ArrowUp");
+    press("ArrowUp");
+    press("ArrowDown");
+    expect(prompt(root)).toBe("pwd");
+    press("ArrowDown");
+    expect(prompt(root)).toBe("vi");
+    press("ArrowDown");
+    expect(prompt(root)).toBe("vi");
+  });
+
+  it("does nothing with no history yet", () => {
+    const root = load();
+    type("l");
+    press("ArrowUp");
+    expect(prompt(root)).toBe("l");
+  });
+
+  it("runs a recalled command with Enter, and can edit it first", () => {
+    const root = load();
+    run("vim tetris");
+    press("ArrowUp");
+    for (let i = 0; i < "tetris".length; i++) press("Backspace");
+    type("nope");
+    press("Enter");
+    expect(textOf(root, ".ag-error")).toBe("vim: no such drill: nope");
+    press("ArrowUp");
+    expect(prompt(root)).toBe("vim nope");
+    press("ArrowUp");
+    expect(prompt(root)).toBe("vim tetris");
+  });
+
+  it("skips empty lines and a command repeated straight after itself", () => {
+    const root = load();
+    run("ls");
+    run("pwd");
+    run("pwd");
+    press("Enter");
+    press("ArrowUp");
+    press("ArrowUp");
+    expect(prompt(root)).toBe("ls");
+  });
+
+  it("stores commands trimmed", () => {
+    const root = load();
+    run("  ls  ");
+    press("ArrowUp");
+    expect(prompt(root)).toBe("ls");
+  });
+
+  it("keeps history across a drill, with the drill's launch in it", () => {
+    const root = load();
+    run("ls");
+    run("vim hjkl");
+    press("Escape");
+    run(":q!");
+    press("ArrowUp");
+    expect(prompt(root)).toBe("vim hjkl");
+    press("ArrowUp");
+    expect(prompt(root)).toBe("ls");
+  });
+
+  it("stops the arrow keys scrolling the page", () => {
+    load();
+    const event = new KeyboardEvent("keydown", { key: "ArrowUp", cancelable: true });
+    window.dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(true);
+  });
+});
+
 describe("home logo", () => {
   function isCompact(root: HTMLElement): boolean {
     return root.querySelector(".ag-brand--compact") !== null;
