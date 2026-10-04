@@ -2,7 +2,8 @@ import { createRun, move, type Direction, type RunState } from "./engine";
 import { directionFor } from "./input";
 import { Timer } from "./timer";
 import { getBestTime, isNewBest as wouldBeNewBest, saveBestTimeIfBetter } from "./storage";
-import { renderInstructions, renderPlay, renderElapsed, renderResults } from "./renderer";
+import { instructions, renderPlay, renderElapsed, renderResults } from "./renderer";
+import { renderInstructions } from "../../shell/renderer";
 import type { DrillScreen, DrillSession } from "../registry";
 
 export function mountHjklDrill(
@@ -50,7 +51,7 @@ export function mountHjklDrill(
   function showInstructions(): void {
     screen = "instructions";
     onScreenChange("instructions");
-    renderInstructions(root);
+    renderInstructions(root, instructions);
   }
 
   showInstructions();

@@ -1,4 +1,4 @@
-import type { DrillScreen } from "../drills/registry";
+import type { DrillScreen, Instructions } from "../drills/registry";
 
 export type ShellOutput = { kind: "list"; items: string[] } | { kind: "error"; text: string };
 
@@ -93,5 +93,33 @@ export function renderCommandLine(
       command !== null ? `<span class="cmdline-input">${escapeHtml(command)}</span><span class="ag-cursor"></span>` : ""
     }</span>
     ${error ? `<span class="ag-error">${escapeHtml(error)}</span>` : `<span class="ag-muted cmdline-hint">${hint}</span>`}
+  `;
+}
+
+function renderManSection(heading: string, body: string): string {
+  return `
+    <section class="ag-man__section">
+      <h2 class="ag-man__heading">${heading}</h2>
+      <div class="ag-man__body">${body}</div>
+    </section>
+  `;
+}
+
+/** A drill's instructions screen, laid out as a man page and waiting for Enter. */
+export function renderInstructions(root: HTMLElement, { name, summary, description, keys, goal }: Instructions): void {
+  const title = `${escapeHtml(name.toUpperCase())}(1)`;
+  const keyRows = keys
+    .map(({ keys, action }) => `<div><dt class="ag-key">${escapeHtml(keys)}</dt><dd>${escapeHtml(action)}</dd></div>`)
+    .join("");
+  root.innerHTML = `
+    <section class="screen screen-instructions ag-man">
+      <header class="ag-man__header"><span>${title}</span><span>Argot Drills Instructions</span><span>${title}</span></header>
+      ${renderManSection("NAME", `<strong>${escapeHtml(name)}</strong> — ${escapeHtml(summary)}`)}
+      ${renderManSection("DESCRIPTION", `<p>${escapeHtml(description)}</p>`)}
+      ${renderManSection("KEYS", `<dl class="ag-man__keys">${keyRows}</dl>`)}
+      ${renderManSection("GOAL", `<p>${escapeHtml(goal)}</p>`)}
+      <hr class="ag-man__rule">
+      <p class="hint ag-muted">press <span class="ag-key">Enter</span> to start</p>
+    </section>
   `;
 }
