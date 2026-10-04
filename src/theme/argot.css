@@ -224,6 +224,13 @@ html, body {
 }
 .ag-man__keys > div { display: contents; }
 .ag-man__keys dd { margin: 0; }
+/* sets the Enter hint apart from the page above it */
+.ag-man__rule {
+  width: 100%;
+  height: 0;
+  border: 0;
+  border-top: 1px solid var(--ag-rule);
+}
 
 /* ---------- hjkl ---------- */
 

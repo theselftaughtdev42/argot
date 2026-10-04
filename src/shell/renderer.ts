@@ -118,6 +118,7 @@ export function renderInstructions(root: HTMLElement, { name, summary, descripti
       ${renderManSection("DESCRIPTION", `<p>${escapeHtml(description)}</p>`)}
       ${renderManSection("KEYS", `<dl class="ag-man__keys">${keyRows}</dl>`)}
       ${renderManSection("GOAL", `<p>${escapeHtml(goal)}</p>`)}
+      <hr class="ag-man__rule">
       <p class="hint ag-muted">press <span class="ag-key">Enter</span> to start</p>
     </section>
   `;

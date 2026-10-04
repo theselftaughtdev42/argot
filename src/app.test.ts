@@ -350,6 +350,12 @@ describe("hjkl instructions screen", () => {
     expect(textOf(root, ".hint .ag-key")).toBe("Enter");
   });
 
+  it("sets the Enter hint apart below a rule", () => {
+    const root = load();
+    run("vim hjkl");
+    expect(root.querySelector(".hint")!.previousElementSibling!.matches("hr.ag-man__rule")).toBe(true);
+  });
+
   it("ignores hjkl until Enter is pressed", () => {
     const root = load();
     run("vim hjkl");
