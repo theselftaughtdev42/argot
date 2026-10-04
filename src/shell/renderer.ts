@@ -105,7 +105,7 @@ function renderManSection(heading: string, body: string): string {
   `;
 }
 
-/** A drill's instructions screen, laid out as a man page and waiting for Enter. */
+/** A drill's instructions screen, laid out as a man page and waiting for Enter, or q to go home. */
 export function renderInstructions(root: HTMLElement, { name, summary, description, keys, goal }: Instructions): void {
   const title = `${escapeHtml(name.toUpperCase())}(1)`;
   const keyRows = keys
@@ -119,7 +119,10 @@ export function renderInstructions(root: HTMLElement, { name, summary, descripti
       ${renderManSection("KEYS", `<dl class="ag-man__keys">${keyRows}</dl>`)}
       ${renderManSection("GOAL", `<p>${escapeHtml(goal)}</p>`)}
       <hr class="ag-man__rule">
-      <p class="hint ag-muted">press <span class="ag-key">Enter</span> to start</p>
+      <p class="hint ag-muted ag-man__actions">
+        <span>press <span class="ag-key">Enter</span> to start</span>
+        <span>press <span class="ag-key">q</span> to quit</span>
+      </p>
     </section>
   `;
 }

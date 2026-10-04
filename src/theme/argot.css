@@ -188,12 +188,15 @@ html, body {
 .drill-greyed .ag-cursor { animation: none; }
 
 /* every drill's instructions screen is a man page: a header line, then
-   uppercase headings over indented bodies */
+   uppercase headings over indented bodies, set smaller than play so the
+   whole page fits a laptop screen without scrolling */
 .ag-man {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
+  font-size: 16px;
+  line-height: 1.5;
 }
 .ag-man > * { margin: 0; }
 .ag-man__header {
@@ -224,6 +227,12 @@ html, body {
 }
 .ag-man__keys > div { display: contents; }
 .ag-man__keys dd { margin: 0; }
+/* Enter and q are separate choices, so they sit apart rather than read as one sentence */
+.ag-man__actions {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 6ch;
+}
 /* sets the Enter hint apart from the page above it */
 .ag-man__rule {
   width: 100%;

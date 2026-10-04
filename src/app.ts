@@ -77,6 +77,11 @@ export function mountApp(root: HTMLElement): void {
 
   function handleDrillKeydown(drill: RunningDrill, event: KeyboardEvent): void {
     if (drill.command === null) {
+      // Like man, q leaves the instructions screen without the command line.
+      if (event.key === "q" && drill.screen === "instructions") {
+        quitDrill(drill);
+        return;
+      }
       if (event.key !== "Escape") {
         drill.session?.handleKey(event);
         return;

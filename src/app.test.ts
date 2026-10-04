@@ -343,11 +343,28 @@ describe("hjkl instructions screen", () => {
     expect(root.textContent).not.toMatch(/best/i);
   });
 
-  it("shows a hint that Enter starts a run", () => {
+  it("shows a hint that Enter starts a run and q quits", () => {
     const root = load();
     run("vim hjkl");
-    expect(textOf(root, ".hint")).toBe("press Enter to start");
-    expect(textOf(root, ".hint .ag-key")).toBe("Enter");
+    const options = [...root.querySelectorAll(".hint > span")];
+    expect(options.map((option) => option.textContent)).toEqual(["press Enter to start", "press q to quit"]);
+    expect(options.map((option) => option.querySelector(".ag-key")!.textContent)).toEqual(["Enter", "q"]);
+  });
+
+  it("q returns home, like quitting man", () => {
+    const root = load();
+    run("vim hjkl");
+    press("q");
+    expect(screenOf(root)).toBe("home");
+  });
+
+  it("q on the command line is typed, not quit", () => {
+    const root = load();
+    run("vim hjkl");
+    press("Escape");
+    press("q");
+    expect(textOf(root, ".cmdline-input")).toBe("q");
+    expect(screenOf(root)).toBe("screen-instructions");
   });
 
   it("sets the Enter hint apart below a rule", () => {
@@ -554,6 +571,13 @@ describe("command mode on the instructions screen", () => {
 });
 
 describe("command mode on the play screen", () => {
+  it("q doesn't quit once a run starts", () => {
+    const root = load();
+    startHjkl();
+    press("q");
+    expect(screenOf(root)).toBe("screen-play");
+  });
+
   it("Esc greys the drill and opens an empty command line with a hint to quit", () => {
     const root = load();
     startHjkl();
