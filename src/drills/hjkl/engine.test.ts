@@ -1,38 +1,38 @@
 import { describe, expect, it } from "vitest";
 import {
-  GRID_SIZE,
+  BOARD_SIZE,
   MIN_SPAWN_DISTANCE,
-  WIN_TOUCHES,
-  createGame,
+  HITS_TO_WIN,
+  createRun,
   move,
   spawnTarget,
-  type GameState,
+  type RunState,
 } from "./engine";
 
-const MAX_INDEX = GRID_SIZE - 1;
+const MAX_INDEX = BOARD_SIZE - 1;
 
-function stateWith(overrides: Partial<GameState>): GameState {
+function stateWith(overrides: Partial<RunState>): RunState {
   return {
     cursor: { x: 0, y: 0 },
-    target: { x: GRID_SIZE - 1, y: GRID_SIZE - 1 },
-    touches: 0,
+    target: { x: BOARD_SIZE - 1, y: BOARD_SIZE - 1 },
+    hits: 0,
     status: "idle",
     ...overrides,
   };
 }
 
-describe("createGame", () => {
-  it("starts the cursor at the grid center with no touches", () => {
-    const state = createGame();
-    const center = Math.floor(GRID_SIZE / 2);
+describe("createRun", () => {
+  it("starts the cursor at the board center with no hits", () => {
+    const state = createRun();
+    const center = Math.floor(BOARD_SIZE / 2);
     expect(state.cursor).toEqual({ x: center, y: center });
-    expect(state.touches).toBe(0);
+    expect(state.hits).toBe(0);
     expect(state.status).toBe("idle");
   });
 
   it("never spawns the target on the cursor's cell", () => {
     for (let i = 0; i < 200; i++) {
-      const state = createGame();
+      const state = createRun();
       expect(state.target).not.toEqual(state.cursor);
     }
   });
@@ -79,51 +79,51 @@ describe("move: boundary clamping", () => {
     expect(next.cursor).toEqual({ x: MAX_INDEX, y: MAX_INDEX });
   });
 
-  it("does not count a boundary no-op as a touch, even when the target is one cell further off-board", () => {
-    const state = stateWith({ cursor: { x: 0, y: 0 }, target: { x: 0, y: 1 }, touches: 3 });
+  it("does not count a boundary no-op as a hit, even when the target is one cell further off-board", () => {
+    const state = stateWith({ cursor: { x: 0, y: 0 }, target: { x: 0, y: 1 }, hits: 3 });
     const next = move(state, "h");
     expect(next.cursor).toEqual({ x: 0, y: 0 });
-    expect(next.touches).toBe(3);
+    expect(next.hits).toBe(3);
   });
 });
 
-describe("move: touch counting and target respawn", () => {
-  it("increments touches and spawns a new target when the cursor hits the target", () => {
+describe("move: hit counting and target respawn", () => {
+  it("increments hits and spawns a new target when the cursor hits the target", () => {
     const state = stateWith({
       cursor: { x: 4, y: 5 },
       target: { x: 5, y: 5 },
-      touches: 0,
+      hits: 0,
       status: "idle",
     });
     const next = move(state, "l");
     expect(next.cursor).toEqual({ x: 5, y: 5 });
-    expect(next.touches).toBe(1);
+    expect(next.hits).toBe(1);
     expect(next.status).toBe("playing");
     expect(next.target).not.toEqual(next.cursor);
   });
 
-  it("leaves touches and target unchanged when the move does not reach the target", () => {
+  it("leaves hits and target unchanged when the move does not reach the target", () => {
     const state = stateWith({
       cursor: { x: 4, y: 5 },
       target: { x: 9, y: 9 },
-      touches: 2,
+      hits: 2,
     });
     const next = move(state, "l");
-    expect(next.touches).toBe(2);
+    expect(next.hits).toBe(2);
     expect(next.target).toEqual({ x: 9, y: 9 });
   });
 });
 
 describe("move: win detection", () => {
-  it("flips to complete exactly on the 20th touch", () => {
+  it("flips to complete exactly on the last hit", () => {
     const state = stateWith({
       cursor: { x: 4, y: 5 },
       target: { x: 5, y: 5 },
-      touches: WIN_TOUCHES - 1,
+      hits: HITS_TO_WIN - 1,
       status: "playing",
     });
     const next = move(state, "l");
-    expect(next.touches).toBe(WIN_TOUCHES);
+    expect(next.hits).toBe(HITS_TO_WIN);
     expect(next.status).toBe("complete");
   });
 
@@ -131,18 +131,18 @@ describe("move: win detection", () => {
     const state = stateWith({
       cursor: { x: 4, y: 5 },
       target: { x: 5, y: 5 },
-      touches: WIN_TOUCHES - 1,
+      hits: HITS_TO_WIN - 1,
       status: "playing",
     });
     const next = move(state, "l");
     expect(next.target).toEqual({ x: 5, y: 5 });
   });
 
-  it("ignores further moves once the game is complete", () => {
+  it("ignores further moves once the run is complete", () => {
     const completed = stateWith({
       cursor: { x: 5, y: 5 },
       target: { x: 5, y: 5 },
-      touches: WIN_TOUCHES,
+      hits: HITS_TO_WIN,
       status: "complete",
     });
     const next = move(completed, "l");

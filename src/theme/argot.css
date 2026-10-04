@@ -111,9 +111,9 @@ html, body {
 }
 .ag-home--compact .ag-stack { margin-block: auto; }
 
-/* ---------- game ---------- */
+/* ---------- drill ---------- */
 
-.ag-game {
+.ag-drill {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -121,7 +121,7 @@ html, body {
   line-height: 1.7;
   text-shadow: var(--ag-text-glow);
 }
-.ag-game__stage {
+.ag-drill__stage {
   flex-grow: 1;
   display: flex;
   flex-direction: column;
@@ -140,7 +140,7 @@ html, body {
   line-height: 1.6;
   color: var(--ag-board-dot);
 }
-.ag-board__player { background: var(--ag-accent); }
+.ag-board__cursor { background: var(--ag-accent); }
 .ag-board__target { color: var(--ag-target); font-weight: var(--ag-weight-bold); }
 
 .ag-statusline {
@@ -172,14 +172,14 @@ html, body {
   min-height: 1.7em;
 }
 
-/* while the command line is open, the game steps back so attention moves to it */
-.ag-game__stage { transition: opacity 0.15s, filter 0.15s; }
-.game-greyed {
+/* while the command line is open, the drill steps back so attention moves to it */
+.ag-drill__stage { transition: opacity 0.15s, filter 0.15s; }
+.drill-greyed {
   opacity: 0.35;
   filter: grayscale(1);
 }
 /* ...and its cursor holds still, so only the command line's blinks */
-.game-greyed .ag-cursor { animation: none; }
+.drill-greyed .ag-cursor { animation: none; }
 
 /* ---------- hjkl ---------- */
 

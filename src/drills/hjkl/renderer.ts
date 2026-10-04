@@ -1,4 +1,4 @@
-import { GRID_SIZE, WIN_TOUCHES, type GameState } from "./engine";
+import { BOARD_SIZE, HITS_TO_WIN, type RunState } from "./engine";
 import { formatTime } from "./timer";
 
 function renderBestTime(bestTimeMs: number | null): string {
@@ -21,20 +21,20 @@ export function renderInstructions(root: HTMLElement): void {
         <li><span class="ag-key">k</span> up</li>
         <li><span class="ag-key">l</span> right</li>
       </ul>
-      <p class="goal ag-muted">Hit ${WIN_TOUCHES} targets as fast as you can. Arrow keys do nothing here &mdash; only hjkl moves the cursor.</p>
+      <p class="goal ag-muted">Hit ${HITS_TO_WIN} targets as fast as you can. Arrow keys do nothing here &mdash; only hjkl moves the cursor.</p>
       <p class="hint ag-muted">press <span class="ag-key">Enter</span> to start</p>
     </section>
   `;
 }
 
 /** The board as rows of dots; every cell is its own element so its position stays queryable. */
-function renderBoard(state: GameState): string {
+function renderBoard(state: RunState): string {
   const rows: string[] = [];
-  for (let y = 0; y < GRID_SIZE; y++) {
+  for (let y = 0; y < BOARD_SIZE; y++) {
     const cells: string[] = [];
-    for (let x = 0; x < GRID_SIZE; x++) {
+    for (let x = 0; x < BOARD_SIZE; x++) {
       if (state.cursor.x === x && state.cursor.y === y) {
-        cells.push(`<span class="board-cell ag-board__player ag-cursor"></span>`);
+        cells.push(`<span class="board-cell ag-board__cursor ag-cursor"></span>`);
       } else if (state.target.x === x && state.target.y === y) {
         cells.push(`<span class="board-cell ag-board__target">✕</span>`);
       } else {
@@ -48,17 +48,17 @@ function renderBoard(state: GameState): string {
 
 /**
  * Draws the whole play screen. Called on each move rather than each frame, so the
- * player cursor isn't recreated (restarting its blink) while the clock runs;
+ * cursor isn't recreated (restarting its blink) while the clock runs;
  * the clock itself updates through renderElapsed.
  */
-export function renderPlay(root: HTMLElement, state: GameState, elapsedMs: number): void {
+export function renderPlay(root: HTMLElement, state: RunState, elapsedMs: number): void {
   root.innerHTML = `
     <section class="screen screen-play ag-play">
       <div class="ag-muted">reach the <span class="ag-board__target">✕</span> using <span class="ag-key">h j k l</span></div>
       ${renderBoard(state)}
       <div class="ag-play__info ag-muted">
         <span class="timer">${formatTime(elapsedMs)}</span>
-        <span class="progress">${state.touches}/${WIN_TOUCHES}</span>
+        <span class="progress">${state.hits}/${HITS_TO_WIN}</span>
       </div>
     </section>
   `;

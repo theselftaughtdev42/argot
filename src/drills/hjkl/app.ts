@@ -1,16 +1,16 @@
-import { createGame, move, type Direction, type GameState } from "./engine";
+import { createRun, move, type Direction, type RunState } from "./engine";
 import { directionFor } from "./input";
 import { Timer } from "./timer";
 import { getBestTime, isNewBest as wouldBeNewBest, saveBestTimeIfBetter } from "./storage";
 import { renderInstructions, renderPlay, renderElapsed, renderResults } from "./renderer";
-import type { GameScreen, GameSession } from "../registry";
+import type { DrillScreen, DrillSession } from "../registry";
 
-export function mountHjklGame(
+export function mountHjklDrill(
   root: HTMLElement,
-  onScreenChange: (screen: GameScreen) => void,
-): GameSession {
-  let state: GameState = createGame();
-  let screen: GameScreen = "instructions";
+  onScreenChange: (screen: DrillScreen) => void,
+): DrillSession {
+  let state: RunState = createRun();
+  let screen: DrillScreen = "instructions";
   let finalTimeMs = 0;
   let isNewBest = false;
   let animationFrame = 0;
@@ -39,7 +39,7 @@ export function mountHjklGame(
   }
 
   function startRun(): void {
-    state = createGame();
+    state = createRun();
     timer.reset();
     screen = "play";
     onScreenChange("play");

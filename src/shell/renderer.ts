@@ -1,4 +1,4 @@
-import type { GameScreen } from "../games/registry";
+import type { DrillScreen } from "../drills/registry";
 
 export type ShellOutput = { kind: "list"; items: string[] } | { kind: "error"; text: string };
 
@@ -23,7 +23,7 @@ function renderOutput(output: ShellOutput): string {
 export function renderHome(root: HTMLElement, { input, last, compact }: HomeState): void {
   const hint =
     last?.name === "ls"
-      ? `type <span class="ag-key">vim</span> and a game name`
+      ? `type <span class="ag-key">vim</span> and a drill name`
       : `type <span class="ag-key">ls</span> and press <span class="ag-key">enter</span>`;
   const brand = `
     <header class="ag-brand${compact ? " ag-brand--compact" : ""}">
@@ -47,34 +47,34 @@ export function renderHome(root: HTMLElement, { input, last, compact }: HomeStat
 }
 
 /**
- * The shell's frame around a running game, mounted once at launch: the stage
- * the game owns, the statusline, and the command line. Returns the stage and
+ * The shell's frame around a running drill, mounted once at launch: the stage
+ * the drill owns, the statusline, and the command line. Returns the stage and
  * the command line for the shell to render into.
  */
-export function renderGameFrame(root: HTMLElement, name: string): { stage: HTMLElement; cmdline: HTMLElement } {
+export function renderDrillFrame(root: HTMLElement, name: string): { stage: HTMLElement; cmdline: HTMLElement } {
   // TMP marks the mode as a placeholder until argot has real modes; Esc doesn't change it.
   root.innerHTML = `
-    <main class="ag-game">
-      <div class="ag-game__stage"></div>
+    <main class="ag-drill">
+      <div class="ag-drill__stage"></div>
       <div class="ag-statusline">
-        <div class="ag-statusline__left"><span class="ag-mode">TMP</span><span class="statusline-game">${escapeHtml(name)}</span></div>
+        <div class="ag-statusline__left"><span class="ag-mode">TMP</span><span class="statusline-drill">${escapeHtml(name)}</span></div>
       </div>
       <div class="ag-cmdline"></div>
     </main>
   `;
   return {
-    stage: root.querySelector<HTMLElement>(".ag-game__stage")!,
+    stage: root.querySelector<HTMLElement>(".ag-drill__stage")!,
     cmdline: root.querySelector<HTMLElement>(".ag-cmdline")!,
   };
 }
 
 /**
- * The command line under a running game: what's typed, with the cursor, while
+ * The command line under a running drill: what's typed, with the cursor, while
  * it's open (`command` is null while closed), and the hint, or an error in its place.
  */
 export function renderCommandLine(
   cmdline: HTMLElement,
-  screen: GameScreen,
+  screen: DrillScreen,
   command: string | null,
   error: string | null,
 ): void {

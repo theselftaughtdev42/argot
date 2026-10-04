@@ -1,4 +1,4 @@
-// Namespaced so future drill games can persist their own best times
+// Namespaced so future drills can persist their own best times
 // under the same localStorage without colliding with this one.
 const BEST_TIME_KEY = "hjkl:bestTimeMs";
 

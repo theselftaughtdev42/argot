@@ -46,7 +46,7 @@ describe("Timer", () => {
     expect(timer.elapsedMs()).toBe(14320);
   });
 
-  it("returns to zero on reset, ready for a fresh drill", () => {
+  it("returns to zero on reset, ready for a fresh run", () => {
     const timer = new Timer();
     timer.start();
     now += 2000;
