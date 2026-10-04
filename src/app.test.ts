@@ -1027,6 +1027,13 @@ describe("argot at home", () => {
     expect(screenOf(root)).toBe("home");
   });
 
+  it.each(["argot", ":argot"])("%s hints at typing one of the listed commands", (command) => {
+    const root = load();
+    run(command);
+    expect(textOf(root, ".home-hint")).toBe("type a command and press enter");
+    expect([...root.querySelectorAll(".home-hint .ag-key")].map((key) => key.textContent)).toEqual(["enter"]);
+  });
+
   it("never lists :argot", () => {
     const root = load();
     run("argot");

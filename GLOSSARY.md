@@ -30,7 +30,7 @@ What a command shows after it runs: one line, like an error, or several, like `a
 _Avoid_: Output, message
 
 **Hint**:
-The short line telling the visitor or player what to type next. On home it points at `argot`; on the drill screens it points at the likeliest commands (`:help` on the play screen, `:q` on the help page, `:w` and `:wq` on the results screen) and at `:argot` for the rest.
+The short line telling the visitor or player what to type next. On home it points at `argot`, then at typing one of the commands `argot` lists; on the drill screens it points at the likeliest commands (`:help` on the play screen, `:q` on the help page, `:w` and `:wq` on the results screen) and at `:argot` for the rest.
 _Avoid_: Help, tip
 
 ## Drills
