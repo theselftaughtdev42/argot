@@ -63,28 +63,48 @@ function textOf(root: HTMLElement, selector: string): string | undefined {
   return root.querySelector(selector)?.textContent ?? undefined;
 }
 
-/** The command-line hint on the instructions and play screens while the line is closed. */
-const PLAY_HINT = "Esc then :q! back to home without saving";
+/** The command-line hint on the play screen while the line is closed. */
+const PLAY_HINT = ["Esc then", ":help for instructions", ":q! back to home"];
 
 /** The command-line hint on the results screen while the line is closed. */
-const RESULTS_HINT = "Esc then :wq save & quit · :q! quit without saving";
+const RESULTS_HINT = ["Esc then", ":wq save & quit", ":q! quit without saving"];
+
+/** The command-line hint on the help page while the line is closed. */
+const HELP_HINT = ["Esc then", ":q back to the drill", ":q! home"];
+
+/** What :q says on play once the run has started. */
+const PLAY_E37 = "E37: run in progress (add ! to abandon it: :q!)";
+
+/** What :q says on results. */
+const RESULTS_E37 = "E37: No write since last change (use :wq to save or :q! to discard)";
+
+/** The command line's hint, split into its parts: "Esc then" while the line is closed, then each option. */
+function hintParts(root: HTMLElement): string[] {
+  return [...root.querySelectorAll(".cmdline-hint > span")].map((part) => part.textContent!);
+}
 
 /** The keys and commands highlighted in the command line's hint. */
 function hintKeys(root: HTMLElement): string[] {
   return [...root.querySelectorAll(".cmdline-hint .ag-key")].map((key) => key.textContent!);
 }
 
-/** The headings of the man page on the instructions screen, in order. */
-function manHeadings(root: HTMLElement): string[] {
-  return [...root.querySelectorAll(".ag-man__heading")].map((heading) => heading.textContent!);
+/** The section headings of the help page, in order. */
+function helpHeadings(root: HTMLElement): string[] {
+  return [...root.querySelectorAll(".ag-help__heading > :first-child")].map((heading) => heading.textContent!);
 }
 
-/** The body text of the man page section under `heading`. */
-function manSection(root: HTMLElement, heading: string): string | undefined {
-  const section = [...root.querySelectorAll(".ag-man__section")].find(
-    (section) => section.querySelector(".ag-man__heading")?.textContent === heading,
+/** The body text of the help page section under `heading`. */
+function helpSection(root: HTMLElement, heading: string): string | undefined {
+  const section = [...root.querySelectorAll(".ag-help__section")].find(
+    (section) => section.querySelector(".ag-help__heading > :first-child")?.textContent === heading,
   );
-  return section?.querySelector(".ag-man__body")?.textContent?.replace(/\s+/g, " ").trim();
+  return section?.querySelector(".ag-help__body")?.textContent?.replace(/\s+/g, " ").trim();
+}
+
+/** Opens the drill's help page from the command line, as a player would. */
+function openHelp(): void {
+  press("Escape");
+  run(":help");
 }
 
 const CURSOR = ".ag-board__cursor";
@@ -92,12 +112,6 @@ const TARGET = ".ag-board__target";
 
 function cellIndex(root: HTMLElement, selector: string): number {
   return [...root.querySelectorAll(".board-cell")].findIndex((cell) => cell.matches(selector));
-}
-
-/** Launches hjkl from home and starts a run, as a player would. */
-function startHjkl(): void {
-  run("vim hjkl");
-  press("Enter");
 }
 
 /** The hjkl key that would move the cursor one step toward the target. */
@@ -292,27 +306,67 @@ describe("home logo", () => {
   });
 });
 
-describe("hjkl instructions screen", () => {
-  it("vim hjkl opens the instructions screen as a man page, with no buttons", () => {
+describe("launching a drill", () => {
+  it("vim hjkl goes straight to the play screen, with the timer at zero", () => {
     const root = load();
     run("vim hjkl");
-    expect(screenOf(root)).toBe("screen-instructions");
-    expect(manHeadings(root)).toEqual(["NAME", "DESCRIPTION", "KEYS", "GOAL"]);
-    const header = [...root.querySelectorAll(".ag-man__header > span")].map((part) => part.textContent);
-    expect(header).toEqual(["HJKL(1)", "Argot Drills Instructions", "HJKL(1)"]);
+    expect(screenOf(root)).toBe("screen-play");
+    expect(textOf(root, ".progress")).toBe(`0/${HITS_TO_WIN}`);
+    expect(textOf(root, ".timer")).toBe("0.00s");
+  });
+
+  it("keeps the clock at zero until the first move", () => {
+    const root = load();
+    run("vim hjkl");
+    vi.advanceTimersByTime(3000);
+    press("Enter");
+    expect(textOf(root, ".timer")).toBe("0.00s");
+
+    stepTowardTarget(root);
+    vi.advanceTimersByTime(1000);
+    press("Enter");
+    expect(parseFloat(textOf(root, ".timer")!)).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe("help page", () => {
+  it(":help opens the drill's help page, laid out like a vim help file", () => {
+    const root = load();
+    run("vim hjkl");
+    openHelp();
+    expect(screenOf(root)).toBe("screen-help");
+    expect(helpHeadings(root)).toEqual(["DESCRIPTION", "KEYS", "GOAL"]);
     expect(root.querySelector("button")).toBeNull();
   });
 
-  it("names the drill and says what it teaches", () => {
+  it("opens with the drill's tag and what it teaches", () => {
     const root = load();
     run("vim hjkl");
-    expect(manSection(root, "NAME")).toBe("hjkl — move the cursor without the arrow keys");
+    openHelp();
+    const title = [...root.querySelectorAll(".ag-help__title > span")].map((part) => part.textContent);
+    expect(title).toEqual(["*hjkl.txt*", "move the cursor without the arrow keys"]);
+  });
+
+  it("starts each section with a === rule and a heading tagged on the right", () => {
+    const root = load();
+    run("vim hjkl");
+    openHelp();
+    const sections = [...root.querySelectorAll(".ag-help__section")];
+    expect(sections.map((section) => section.querySelector(".ag-help__rule")!.textContent)).toEqual(
+      sections.map(() => expect.stringMatching(/^=+$/)),
+    );
+    expect(sections.map((section) => section.querySelector(".ag-help__heading > :last-child")!.textContent)).toEqual([
+      "*hjkl-description*",
+      "*hjkl-keys*",
+      "*hjkl-goal*",
+    ]);
   });
 
   it("lists each key with what it does, the keys highlighted", () => {
     const root = load();
     run("vim hjkl");
-    const keys = [...root.querySelectorAll(".ag-man__keys > div")].map((row) => [
+    openHelp();
+    const keys = [...root.querySelectorAll(".ag-help__keys > div")].map((row) => [
       row.querySelector("dt.ag-key")!.textContent,
       row.querySelector("dd")!.textContent,
     ]);
@@ -324,86 +378,175 @@ describe("hjkl instructions screen", () => {
     ]);
   });
 
-  it("explains why vim moves with hjkl, and that arrow keys do nothing here", () => {
+  it("explains why vim moves with hjkl, highlighting the keys it names", () => {
     const root = load();
     run("vim hjkl");
-    expect(manSection(root, "DESCRIPTION")).toBe(
+    openHelp();
+    expect(helpSection(root, "DESCRIPTION")).toBe(
       "In vim, you move the cursor with h, j, k and l instead of the arrow keys, so your fingers never leave the home row.",
     );
-  });
-
-  it("highlights the keys the description names, like the KEYS section", () => {
-    const root = load();
-    run("vim hjkl");
-    const description = [...root.querySelectorAll(".ag-man__section")][1];
-    expect([...description.querySelectorAll(".ag-key")].map((key) => key.textContent)).toEqual(["h", "j", "k", "l"]);
+    const description = root.querySelectorAll(".ag-help__section")[0];
+    expect([...description.querySelectorAll(".ag-help__body .ag-key")].map((key) => key.textContent)).toEqual([
+      "h",
+      "j",
+      "k",
+      "l",
+    ]);
   });
 
   it("gives the goal", () => {
     const root = load();
     run("vim hjkl");
-    expect(manSection(root, "GOAL")).toBe(`Hit ${HITS_TO_WIN} targets as fast as you can.`);
+    openHelp();
+    expect(helpSection(root, "GOAL")).toBe(`Hit ${HITS_TO_WIN} targets as fast as you can.`);
   });
 
   it("doesn't show the best time, even when the player has one", () => {
     localStorage.setItem("hjkl:bestTimeMs", "14320");
     const root = load();
     run("vim hjkl");
+    openHelp();
     expect(root.querySelector(".best-time")).toBeNull();
     expect(root.textContent).not.toMatch(/best/i);
   });
 
-  it("shows a hint that Enter starts a run and q quits", () => {
+  it("marks the statusline as a read-only help buffer, and puts the drill's name back when help closes", () => {
     const root = load();
     run("vim hjkl");
-    const options = [...root.querySelectorAll(".hint > span")];
-    expect(options.map((option) => option.textContent)).toEqual(["press Enter to start", "press q to quit"]);
-    expect(options.map((option) => option.querySelector(".ag-key")!.textContent)).toEqual(["Enter", "q"]);
-  });
-
-  it("q returns home, like quitting man", () => {
-    const root = load();
-    run("vim hjkl");
-    press("q");
-    expect(screenOf(root)).toBe("home");
-  });
-
-  it("q on the command line is typed, not quit", () => {
-    const root = load();
-    run("vim hjkl");
+    openHelp();
+    expect(textOf(root, ".ag-mode")).toBe("TMP");
+    expect(textOf(root, ".statusline-drill")).toBe("hjkl.txt [Help][RO]");
     press("Escape");
-    press("q");
-    expect(textOf(root, ".cmdline-input")).toBe("q");
-    expect(screenOf(root)).toBe("screen-instructions");
+    run(":q");
+    expect(textOf(root, ".statusline-drill")).toBe("hjkl");
   });
 
-  it("sets the Enter hint apart below a rule", () => {
+  it("closes the command line and hints at Esc then :q back to the drill or :q! home", () => {
     const root = load();
     run("vim hjkl");
-    expect(root.querySelector(".hint")!.previousElementSibling!.matches("hr.ag-man__rule")).toBe(true);
+    openHelp();
+    expect(root.querySelector(".cmdline-input")).toBeNull();
+    expect(hintParts(root)).toEqual(HELP_HINT);
+    expect(hintKeys(root)).toEqual(["Esc", ":q", ":q!"]);
   });
 
-  it("ignores hjkl until Enter is pressed", () => {
+  it("with the command line open, greys the page and hints at :q and :q!", () => {
     const root = load();
     run("vim hjkl");
-    press("l");
-    expect(screenOf(root)).toBe("screen-instructions");
+    openHelp();
+    press("Escape");
+    expect(root.querySelector(".drill-greyed .screen-help")).not.toBeNull();
+    expect(hintParts(root)).toEqual([":q back to the drill", ":q! home"]);
+    expect(hintKeys(root)).toEqual([":q", ":q!"]);
+    press("Escape");
+    expect(root.querySelector(".drill-greyed")).toBeNull();
   });
 
-  it("Enter begins a fresh run with the timer at zero", () => {
+  it("ignores hjkl, Enter and a bare q", () => {
     const root = load();
     run("vim hjkl");
-    press("Enter");
+    openHelp();
+    for (const key of ["h", "j", "k", "l", "Enter", "q"]) press(key);
+    expect(screenOf(root)).toBe("screen-help");
+    expect(root.querySelector(".cmdline-input")).toBeNull();
+  });
+
+  it(":q goes back to a fresh play screen with the timer at zero", () => {
+    const root = load();
+    run("vim hjkl");
+    openHelp();
+    press("Escape");
+    run(":q");
     expect(screenOf(root)).toBe("screen-play");
     expect(textOf(root, ".progress")).toBe(`0/${HITS_TO_WIN}`);
     expect(textOf(root, ".timer")).toBe("0.00s");
+    expect(root.querySelector(".cmdline-input")).toBeNull();
+    expect(hintParts(root)).toEqual(PLAY_HINT);
+
+    stepTowardTarget(root);
+    vi.advanceTimersByTime(1000);
+    press("Enter");
+    expect(parseFloat(textOf(root, ".timer")!)).toBeGreaterThanOrEqual(1);
+  });
+
+  it(":q! goes home", () => {
+    const root = load();
+    run("vim hjkl");
+    openHelp();
+    press("Escape");
+    run(":q!");
+    expect(screenOf(root)).toBe("home");
+  });
+
+  it(":help stays on the help page and closes the command line", () => {
+    const root = load();
+    run("vim hjkl");
+    openHelp();
+    openHelp();
+    expect(screenOf(root)).toBe("screen-help");
+    expect(root.querySelector(".cmdline-input")).toBeNull();
+    expect(root.querySelector(".ag-cmdline .ag-error")).toBeNull();
+  });
+
+  it.each([":wq", ":x", "q"])("%s shows an error naming :q and :q!, and stays on help", (command) => {
+    const root = load();
+    run("vim hjkl");
+    openHelp();
+    press("Escape");
+    run(command);
+    expect(textOf(root, ".ag-cmdline .ag-error")).toBe(`${command} isn't supported in argot (use :q or :q!)`);
+    expect(screenOf(root)).toBe("screen-help");
+  });
+});
+
+describe(":help from a drill", () => {
+  it("before the first move opens help, and :q comes back to a fresh run", () => {
+    const root = load();
+    run("vim hjkl");
+    openHelp();
+    expect(screenOf(root)).toBe("screen-help");
+    press("Escape");
+    run(":q");
+    expect(textOf(root, ".timer")).toBe("0.00s");
+  });
+
+  it("mid-run discards the run, so the clock can't be paused", () => {
+    const root = load();
+    run("vim hjkl");
+    while (textOf(root, ".progress") === `0/${HITS_TO_WIN}`) stepTowardTarget(root);
+    vi.advanceTimersByTime(2000);
+    openHelp();
+    expect(screenOf(root)).toBe("screen-help");
+    vi.advanceTimersByTime(5000);
+
+    press("Escape");
+    run(":q");
+    expect(screenOf(root)).toBe("screen-play");
+    expect(textOf(root, ".progress")).toBe(`0/${HITS_TO_WIN}`);
+    expect(textOf(root, ".timer")).toBe("0.00s");
+  });
+
+  it("on results discards the run without saving, even on a new best", () => {
+    const root = load();
+    run("vim hjkl");
+    playToCompletion(root);
+    expect(root.querySelector(".new-best")).not.toBeNull();
+    openHelp();
+    expect(screenOf(root)).toBe("screen-help");
+    expect(localStorage.getItem("hjkl:bestTimeMs")).toBeNull();
+
+    press("Escape");
+    run(":q");
+    expect(screenOf(root)).toBe("screen-play");
+    expect(textOf(root, ".timer")).toBe("0.00s");
+    expect(localStorage.getItem("hjkl:bestTimeMs")).toBeNull();
   });
 });
 
 describe("hjkl play screen", () => {
   it("asks the player to reach the ✕ using h j k l", () => {
     const root = load();
-    startHjkl();
+    run("vim hjkl");
     const instructions = root.querySelector(".ag-play > :first-child")!;
     expect(instructions.textContent).toBe("reach the ✕ using h j k l");
     expect(instructions.querySelector(".ag-key")!.textContent).toBe("h j k l");
@@ -411,7 +554,7 @@ describe("hjkl play screen", () => {
 
   it("draws the board as rows of dots, with one cursor and one ✕ target", () => {
     const root = load();
-    startHjkl();
+    run("vim hjkl");
     const board = root.querySelector(".ag-board")!;
     const rows = board.textContent!.split("\n");
     expect(rows).toHaveLength(BOARD_SIZE);
@@ -424,7 +567,7 @@ describe("hjkl play screen", () => {
 
   it("shows the timer and progress beneath the board", () => {
     const root = load();
-    startHjkl();
+    run("vim hjkl");
     const board = root.querySelector(".ag-board")!;
     for (const selector of [".timer", ".progress"]) {
       const info = root.querySelector(selector)!;
@@ -435,7 +578,7 @@ describe("hjkl play screen", () => {
 
   it("updates the timer and progress as the player moves", () => {
     const root = load();
-    startHjkl();
+    run("vim hjkl");
     stepTowardTarget(root);
     vi.advanceTimersByTime(1500);
     expect(parseFloat(textOf(root, ".timer")!)).toBeGreaterThanOrEqual(1.5);
@@ -446,7 +589,7 @@ describe("hjkl play screen", () => {
 
   it("keeps the cursor in the stage that greys while the command line is open", () => {
     const root = load();
-    startHjkl();
+    run("vim hjkl");
     const cursor = () => root.querySelector(`${CURSOR}.ag-cursor`)!;
     expect(cursor().closest(".drill-greyed")).toBeNull();
     press("Escape");
@@ -469,57 +612,53 @@ describe("drill frame", () => {
     expect(statusline.compareDocumentPosition(cmdline) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it("keeps the mode at TMP through Esc, play and results", () => {
+  it("keeps the mode at TMP through Esc, play, help and results", () => {
     const root = load();
     run("vim hjkl");
     press("Escape");
     expect(textOf(root, ".ag-mode")).toBe("TMP");
-    press("Escape");
-    press("Enter");
-    press("Escape");
+    run(":help");
     expect(textOf(root, ".ag-mode")).toBe("TMP");
     press("Escape");
+    run(":q");
     playToCompletion(root);
     expect(textOf(root, ".ag-mode")).toBe("TMP");
   });
 
-  it("on play with the command line closed, hints at Esc then :q! to go home without saving", () => {
+  it("on play with the command line closed, hints at Esc then :help for instructions or :q! home", () => {
     const root = load();
-    startHjkl();
-    expect(textOf(root, ".cmdline-hint")).toBe(PLAY_HINT);
-    expect(hintKeys(root)).toEqual(["Esc", ":q!"]);
+    run("vim hjkl");
+    expect(hintParts(root)).toEqual(PLAY_HINT);
+    expect(hintKeys(root)).toEqual(["Esc", ":help", ":q!"]);
     expect(root.querySelector(".ag-cmdline .ag-cursor")).toBeNull();
   });
 
-  it.each([
-    ["instructions", () => run("vim hjkl")],
-    ["play", startHjkl],
-  ])("on %s with the command line open, shows what's typed with a cursor and hints at :q!", (_screen, open) => {
+  it("on play with the command line open, shows what's typed with a cursor and hints at :help and :q!", () => {
     const root = load();
-    open();
+    run("vim hjkl");
     press("Escape");
     type(":q");
     expect(textOf(root, ".cmdline-input")).toBe(":q");
     expect(root.querySelector(".cmdline-input + .ag-cursor")).not.toBeNull();
-    expect(textOf(root, ".cmdline-hint")).toBe("type :q! to quit");
-    expect(hintKeys(root)).toEqual([":q!"]);
+    expect(hintParts(root)).toEqual([":help for instructions", ":q! back to home"]);
+    expect(hintKeys(root)).toEqual([":help", ":q!"]);
   });
 
   it("on results with the command line closed, hints at Esc then :wq or :q!", () => {
     const root = load();
-    startHjkl();
+    run("vim hjkl");
     playToCompletion(root);
-    expect(textOf(root, ".cmdline-hint")).toBe(RESULTS_HINT);
+    expect(hintParts(root)).toEqual(RESULTS_HINT);
     expect(hintKeys(root)).toEqual(["Esc", ":wq", ":q!"]);
     expect(root.querySelector(".ag-cmdline .ag-cursor")).toBeNull();
   });
 
   it("on results with the command line open, hints at :wq and :q!", () => {
     const root = load();
-    startHjkl();
+    run("vim hjkl");
     playToCompletion(root);
     press("Escape");
-    expect(textOf(root, ".cmdline-hint")).toBe(":wq save & quit · :q! quit without saving");
+    expect(hintParts(root)).toEqual([":wq save & quit", ":q! quit without saving"]);
     expect(hintKeys(root)).toEqual([":wq", ":q!"]);
     expect(root.querySelector(".cmdline-input + .ag-cursor")).not.toBeNull();
   });
@@ -529,88 +668,68 @@ describe("drill frame", () => {
     run("vim hjkl");
     press("Escape");
     run(":x");
-    expect(textOf(root, ".ag-cmdline .ag-error")).toBe(":x isn't supported in argot (use :q! to quit)");
+    expect(textOf(root, ".ag-cmdline .ag-error")).toBe(":x isn't supported in argot (use :help or :q!)");
     expect(root.querySelector(".cmdline-hint")).toBeNull();
   });
 });
 
-describe("command mode on the instructions screen", () => {
-  it("shows only the instructions until Esc opens the command line", () => {
-    const root = load();
-    run("vim hjkl");
-    expect(root.querySelector(".ag-drill--bare")).not.toBeNull();
-    press("Escape");
-    expect(root.querySelector(".ag-drill--bare")).toBeNull();
-    press("Escape");
-    expect(root.querySelector(".ag-drill--bare")).not.toBeNull();
-  });
-
-  it("shows the statusline and command line once a run starts", () => {
-    const root = load();
-    startHjkl();
-    expect(root.querySelector(".ag-drill--bare")).toBeNull();
-  });
-
-  it("Esc greys the instructions screen and opens the command line", () => {
+describe(":q", () => {
+  it("on play before the first move goes home, since there's nothing to lose", () => {
     const root = load();
     run("vim hjkl");
     press("Escape");
-    expect(root.querySelector(".drill-greyed")).not.toBeNull();
+    run(":q");
+    expect(screenOf(root)).toBe("home");
+  });
+
+  it("on play after the first move shows E37 in place of the hint, pointing at :q!", () => {
+    const root = load();
+    run("vim hjkl");
+    stepTowardTarget(root);
+    press("Escape");
+    run(":q");
+    expect(textOf(root, ".ag-cmdline .ag-error")).toBe(PLAY_E37);
+    expect(root.querySelector(".cmdline-hint")).toBeNull();
     expect(textOf(root, ".cmdline-input")).toBe("");
-    expect(textOf(root, ".cmdline-hint")).toBe("type :q! to quit");
-  });
+    expect(screenOf(root)).toBe("screen-play");
 
-  it(":q! returns home", () => {
-    const root = load();
-    run("vim hjkl");
-    press("Escape");
     run(":q!");
     expect(screenOf(root)).toBe("home");
   });
 
-  it("an unknown command shows an error and stays on the instructions screen", () => {
+  it("on results shows E37 in place of the hint, pointing at :wq and :q!", () => {
     const root = load();
     run("vim hjkl");
+    playToCompletion(root);
     press("Escape");
-    run(":wq");
-    expect(textOf(root, ".ag-cmdline .ag-error")).toBe(":wq isn't supported in argot (use :q! to quit)");
-    expect(screenOf(root)).toBe("screen-instructions");
-  });
-
-  it("Esc goes back to the instructions screen, where Enter still starts a run", () => {
-    const root = load();
-    run("vim hjkl");
-    press("Escape");
-    press("Escape");
-    expect(root.querySelector(".drill-greyed")).toBeNull();
-    expect(root.querySelector(".cmdline-input")).toBeNull();
-    expect(screenOf(root)).toBe("screen-instructions");
-
-    press("Enter");
-    expect(screenOf(root)).toBe("screen-play");
+    run(":q");
+    expect(textOf(root, ".ag-cmdline .ag-error")).toBe(RESULTS_E37);
+    expect(root.querySelector(".cmdline-hint")).toBeNull();
+    expect(screenOf(root)).toBe("screen-results");
+    expect(localStorage.getItem("hjkl:bestTimeMs")).toBeNull();
   });
 });
 
 describe("command mode on the play screen", () => {
   it("q doesn't quit once a run starts", () => {
     const root = load();
-    startHjkl();
+    run("vim hjkl");
     press("q");
     expect(screenOf(root)).toBe("screen-play");
   });
 
   it("Esc greys the drill and opens an empty command line with a hint to quit", () => {
     const root = load();
-    startHjkl();
+    run("vim hjkl");
     press("Escape");
     expect(root.querySelector(".drill-greyed")).not.toBeNull();
     expect(textOf(root, ".cmdline-input")).toBe("");
-    expect(textOf(root, ".cmdline-hint")).toBe("type :q! to quit");
+    expect(hintParts(root)).toEqual([":help for instructions", ":q! back to home"]);
   });
 
   it("echoes typed characters on the command line, and Backspace deletes them", () => {
     const root = load();
-    startHjkl();
+    run("vim hjkl");
     press("Escape");
     type(":qq");
     expect(textOf(root, ".cmdline-input")).toBe(":qq");
@@ -620,7 +739,7 @@ describe("command mode on the play screen", () => {
 
   it("hjkl type on the command line instead of moving the cursor", () => {
     const root = load();
-    startHjkl();
+    run("vim hjkl");
     const start = cellIndex(root, CURSOR);
     const key = keyTowardTarget(root);
     press("Escape");
@@ -631,7 +750,7 @@ describe("command mode on the play screen", () => {
 
   it("keeps the timer running while greyed", () => {
     const root = load();
-    startHjkl();
+    run("vim hjkl");
     stepTowardTarget(root);
     press("Escape");
     vi.advanceTimersByTime(2000);
@@ -640,7 +759,7 @@ describe("command mode on the play screen", () => {
 
   it("Esc closes the command line and resumes the run where it was", () => {
     const root = load();
-    startHjkl();
+    run("vim hjkl");
     stepTowardTarget(root);
     const cursor = cellIndex(root, CURSOR);
     press("Escape");
@@ -648,7 +767,7 @@ describe("command mode on the play screen", () => {
     press("Escape");
     expect(root.querySelector(".drill-greyed")).toBeNull();
     expect(root.querySelector(".cmdline-input")).toBeNull();
-    expect(textOf(root, ".cmdline-hint")).toBe(PLAY_HINT);
+    expect(hintParts(root)).toEqual(PLAY_HINT);
     expect(cellIndex(root, CURSOR)).toBe(cursor);
 
     stepTowardTarget(root);
@@ -658,7 +777,7 @@ describe("command mode on the play screen", () => {
   it(":q! abandons the run and returns home without touching the best time", () => {
     localStorage.setItem("hjkl:bestTimeMs", "14320");
     const root = load();
-    startHjkl();
+    run("vim hjkl");
     stepTowardTarget(root);
     press("Escape");
     run(":q!");
@@ -670,13 +789,12 @@ describe("command mode on the play screen", () => {
   });
 
   it.each([
-    [":q", ":q isn't supported in argot (use :q! to quit)"],
-    [":wq", ":wq isn't supported in argot (use :q! to quit)"],
-    [":x", ":x isn't supported in argot (use :q! to quit)"],
-    ["q!", "q! isn't supported in argot (use :q! to quit)"],
+    [":wq", ":wq isn't supported in argot (use :help or :q!)"],
+    [":x", ":x isn't supported in argot (use :help or :q!)"],
+    ["q!", "q! isn't supported in argot (use :help or :q!)"],
   ])("%s shows an error naming what is supported, in place of the hint, and stays greyed", (command, error) => {
     const root = load();
-    startHjkl();
+    run("vim hjkl");
     press("Escape");
     run(command);
     expect(textOf(root, ".ag-cmdline .ag-error")).toBe(error);
@@ -692,8 +810,7 @@ describe("command mode on the play screen", () => {
     const screens = [root.textContent];
     press("Escape");
     screens.push(root.textContent);
-    press("Escape");
-    press("Enter");
+    run(":help");
     screens.push(root.textContent);
     press("Escape");
     screens.push(root.textContent);
@@ -702,16 +819,16 @@ describe("command mode on the play screen", () => {
 
   it("does nothing on Enter at an empty command line", () => {
     const root = load();
-    startHjkl();
+    run("vim hjkl");
     press("Escape");
     press("Enter");
     expect(root.querySelector(".ag-cmdline .ag-error")).toBeNull();
-    expect(textOf(root, ".cmdline-hint")).toBe("type :q! to quit");
+    expect(hintParts(root)).toEqual([":help for instructions", ":q! back to home"]);
   });
 
   it("ignores held-down and Ctrl/Cmd/Alt-modified hjkl", () => {
     const root = load();
-    startHjkl();
+    run("vim hjkl");
     const start = cellIndex(root, CURSOR);
     for (const key of "hjkl") {
       for (const init of [{ repeat: true }, { ctrlKey: true }, { metaKey: true }, { altKey: true }]) {
@@ -725,7 +842,7 @@ describe("command mode on the play screen", () => {
 describe("hjkl results", () => {
   it("shows the final time and new best with the command line closed, and no buttons", () => {
     const root = load();
-    startHjkl();
+    run("vim hjkl");
     playToCompletion(root);
     expect(screenOf(root)).toBe("screen-results");
     expect(textOf(root, ".final-time")).toMatch(/^\d+\.\d\ds$/);
@@ -736,7 +853,7 @@ describe("hjkl results", () => {
 
   it("needs Esc before a command, like vim: typing first does nothing", () => {
     const root = load();
-    startHjkl();
+    run("vim hjkl");
     playToCompletion(root);
     run(":wq");
     expect(screenOf(root)).toBe("screen-results");
@@ -751,7 +868,7 @@ describe("hjkl results", () => {
 
   it("doesn't grey results while the command line is open", () => {
     const root = load();
-    startHjkl();
+    run("vim hjkl");
     playToCompletion(root);
     press("Escape");
     expect(root.querySelector(".drill-greyed")).toBeNull();
@@ -760,7 +877,7 @@ describe("hjkl results", () => {
   it(":wq on a time that isn't a new best leaves the stored best and returns home", () => {
     localStorage.setItem("hjkl:bestTimeMs", "1");
     const root = load();
-    startHjkl();
+    run("vim hjkl");
     playToCompletion(root);
     expect(root.querySelector(".new-best")).toBeNull();
 
@@ -772,7 +889,7 @@ describe("hjkl results", () => {
 
   it(":q! returns home without saving, even on a new best", () => {
     const root = load();
-    startHjkl();
+    run("vim hjkl");
     playToCompletion(root);
     expect(root.querySelector(".new-best")).not.toBeNull();
 
@@ -785,38 +902,38 @@ describe("hjkl results", () => {
   it("shows the stored best time alongside the run", () => {
     localStorage.setItem("hjkl:bestTimeMs", "14320");
     const root = load();
-    startHjkl();
+    run("vim hjkl");
     playToCompletion(root);
     expect(textOf(root, ".best-time")).toBe("Best time: 14.32s");
   });
 
   it("shows no best time when the player has none yet", () => {
     const root = load();
-    startHjkl();
+    run("vim hjkl");
     playToCompletion(root);
     expect(root.querySelector(".best-time")).toBeNull();
   });
 
-  it.each([":q", ":w", ":x", "wq"])("%s shows an error naming :wq and :q!, and stays on results", (command) => {
+  it.each([":w", ":x", "wq"])("%s shows an error naming :wq, :q! and :help, and stays on results", (command) => {
     const root = load();
-    startHjkl();
+    run("vim hjkl");
     playToCompletion(root);
     press("Escape");
     run(command);
-    expect(textOf(root, ".ag-cmdline .ag-error")).toBe(`${command} isn't supported in argot (use :wq or :q!)`);
+    expect(textOf(root, ".ag-cmdline .ag-error")).toBe(`${command} isn't supported in argot (use :wq, :q! or :help)`);
     expect(textOf(root, ".cmdline-input")).toBe("");
     expect(screenOf(root)).toBe("screen-results");
   });
 
   it("Esc closes the command line, discarding what's typed, and Esc opens it again empty", () => {
     const root = load();
-    startHjkl();
+    run("vim hjkl");
     playToCompletion(root);
     press("Escape");
     type(":x");
     press("Escape");
     expect(root.querySelector(".cmdline-input")).toBeNull();
-    expect(textOf(root, ".cmdline-hint")).toBe(RESULTS_HINT);
+    expect(hintParts(root)).toEqual(RESULTS_HINT);
     expect(screenOf(root)).toBe("screen-results");
 
     press("Escape");
@@ -827,12 +944,12 @@ describe("hjkl results", () => {
 
   it("doesn't save the best time just by finishing", () => {
     const root = load();
-    startHjkl();
+    run("vim hjkl");
     playToCompletion(root);
     expect(root.querySelector(".new-best")).not.toBeNull();
 
     const reloaded = load();
-    startHjkl();
+    run("vim hjkl");
     playToCompletion(reloaded);
     expect(reloaded.querySelector(".new-best")).not.toBeNull();
     expect(reloaded.querySelector(".best-time")).toBeNull();
@@ -840,9 +957,18 @@ describe("hjkl results", () => {
 });
 
 describe("full flow", () => {
-  it("runs Home → Instructions → Play → Results → Home → Instructions → Play", () => {
+  it("runs Home → Play → Help → Play → Results → Home → Play", () => {
     const root = load();
-    startHjkl();
+    run("vim hjkl");
+    expect(screenOf(root)).toBe("screen-play");
+
+    openHelp();
+    expect(screenOf(root)).toBe("screen-help");
+
+    press("Escape");
+    run(":q");
+    expect(screenOf(root)).toBe("screen-play");
+
     playToCompletion(root);
     expect(screenOf(root)).toBe("screen-results");
 
@@ -850,18 +976,15 @@ describe("full flow", () => {
     run(":q!");
     expect(screenOf(root)).toBe("home");
 
-    startHjkl();
+    run("vim hjkl");
     expect(screenOf(root)).toBe("screen-play");
     expect(textOf(root, ".progress")).toBe(`0/${HITS_TO_WIN}`);
     expect(textOf(root, ".timer")).toBe("0.00s");
-
-    playToCompletion(root);
-    expect(screenOf(root)).toBe("screen-results");
   });
 
   it(":wq on a new best saves it and returns home, and it survives a reload", () => {
     const first = load();
-    startHjkl();
+    run("vim hjkl");
     playToCompletion(first);
     const finalTime = textOf(first, ".final-time");
 
@@ -870,22 +993,23 @@ describe("full flow", () => {
     expect(screenOf(first)).toBe("home");
 
     const reloaded = load();
-    startHjkl();
+    run("vim hjkl");
     playToCompletion(reloaded);
     expect(textOf(reloaded, ".best-time")).toBe(`Best time: ${finalTime}`);
   });
 });
 
 describe("loading the site", () => {
-  it("lands on home after reloading on the instructions screen", () => {
+  it("lands on home after reloading on the help page", () => {
     load();
     run("vim hjkl");
+    openHelp();
     expect(screenOf(load())).toBe("home");
   });
 
   it("lands on home after reloading mid-run", () => {
     const first = load();
-    startHjkl();
+    run("vim hjkl");
     stepTowardTarget(first);
     expect(screenOf(first)).toBe("screen-play");
 
@@ -894,7 +1018,7 @@ describe("loading the site", () => {
 
   it("lands on home after reloading on results", () => {
     const first = load();
-    startHjkl();
+    run("vim hjkl");
     playToCompletion(first);
     expect(screenOf(first)).toBe("screen-results");
 
@@ -907,7 +1031,9 @@ describe("key routing", () => {
     const root = load();
     const keydownListeners = () => listeners.filter(([type]) => type === "keydown").length;
     run("vim hjkl");
-    press("Enter");
+    openHelp();
+    press("Escape");
+    run(":q");
     playToCompletion(root);
     expect(keydownListeners()).toBe(1);
   });

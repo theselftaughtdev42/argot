@@ -23,16 +23,16 @@ The `❯` line on home where the visitor types commands.
 _Avoid_: Input, terminal
 
 **Command**:
-What's typed at the prompt (e.g. `ls`, `vim hjkl`) or on the command line (e.g. `:q!`, `:wq`).
+What's typed at the prompt (e.g. `ls`, `vim hjkl`) or on the command line (e.g. `:help`, `:q`, `:q!`, `:wq`).
 
 **Hint**:
-The short line telling the visitor or player what to type next.
+The short line telling the visitor or player what to type next. On the play screen it points at `:help` for instructions, and on the help page at `:q` back to the drill.
 _Avoid_: Help, tip
 
 ## Drills
 
 **Drill**:
-A timed exercise that repeats one vim skill until it becomes muscle memory, launched from home with `vim <name>`. hjkl is a drill.
+A timed exercise that repeats one vim skill until it becomes muscle memory, launched from home with `vim <name>`, which opens its play screen. hjkl is a drill.
 _Avoid_: Game, exercise, lesson
 
 **Drill frame**:
@@ -47,25 +47,21 @@ The bar under the stage showing the mode and the drill's name.
 _Avoid_: Status bar
 
 **Command line**:
-The line under the statusline that opens with Esc, where the player types `:q!` or `:wq`.
+The line under the statusline that opens with Esc, where the player types `:help`, `:q`, `:q!` or `:wq`. `:q` only quits when there's nothing to lose (before the first move, or from the help page); otherwise it shows an E37 error naming `:q!` or `:wq`.
 _Avoid_: Prompt (that's home's), cmdline
 
-**Instructions screen**:
-A drill's first screen, explaining the task and waiting for Enter to start, or q to go back home.
-_Avoid_: Splash, landing, instructions page
-
-**Man page**:
-The layout every instructions screen uses: a header line, then the sections NAME, DESCRIPTION, KEYS and GOAL.
-_Avoid_: Help page
+**Help page**:
+A drill's instructions, laid out like a vim help file, opened with `:help` from the command line and closed with `:q`.
+_Avoid_: Instructions screen, man page, splash, landing, instructions page
 
 **Play screen**:
-The screen where the player is doing the drill and the clock is running.
+The screen a drill opens on, where the player is doing the drill. The clock starts on the first move.
 
 **Results screen**:
 The screen after a run ends, showing the final time and whether it's a new best.
 
 **Run**:
-One attempt at a drill, from starting play to reaching the results screen.
+One attempt at a drill, from the first move to reaching the results screen. Opening the help page ends the run without saving it; `:q` from help starts a fresh one.
 _Avoid_: Round, attempt, session
 
 **Best time**:

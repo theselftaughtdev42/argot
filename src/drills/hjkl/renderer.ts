@@ -1,6 +1,6 @@
 import { BOARD_SIZE, HITS_TO_WIN, type RunState } from "./engine";
 import { formatTime } from "./timer";
-import type { Instructions } from "../registry";
+import type { Help } from "../registry";
 
 function renderBestTime(bestTimeMs: number | null): string {
   return bestTimeMs !== null
@@ -8,7 +8,7 @@ function renderBestTime(bestTimeMs: number | null): string {
     : "";
 }
 
-export const instructions: Instructions = {
+export const help: Help = {
   name: "hjkl",
   summary: "move the cursor without the arrow keys",
   description:

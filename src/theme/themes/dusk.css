@@ -22,7 +22,7 @@
   --ag-cursor: #c0caf5;
 
   /* dividers */
-  --ag-rule: #3b4261;        /* the line above the instructions screen's Enter hint */
+  --ag-rule: #3b4261;        /* the === rules between a help page's sections */
 
   /* board */
   --ag-board-dot: #3b4261;
