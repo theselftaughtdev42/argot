@@ -40,7 +40,7 @@ _Avoid_: Help, tip
 ## Drills
 
 **Drill**:
-A timed exercise that repeats one vim skill until it becomes muscle memory, launched from home with `vim <name>`, which opens its play screen. hjkl is a drill.
+A timed exercise that repeats one vim skill until it becomes muscle memory, launched from home with `vim <name>`, which opens its play screen. hjkl and wb are drills.
 _Avoid_: Game, exercise, lesson
 
 **Drill frame**:
@@ -72,6 +72,21 @@ The screen after a run ends, showing the final time and whether it's a new best.
 One attempt at a drill, from the first move to reaching the results screen. Opening the help page ends the run without saving it; `:q` from help starts a fresh one.
 _Avoid_: Round, attempt, session
 
+**Cursor**:
+The block the player moves, with h, j, k and l in hjkl, or w and b in wb.
+_Avoid_: Player
+
+**Target**:
+Where the player moves the cursor to: the `✕` on hjkl's board, or the start of a marked word in wb.
+_Avoid_: Goal
+
+**Hit**:
+Moving the cursor onto the target, which makes a new target appear.
+_Avoid_: Touch, catch
+
+**Progress**:
+How many hits the player has made out of the number needed to finish the run.
+
 **Best time**:
 A drill's fastest run, kept once the player saves it with `:w` or `:wq`.
 _Avoid_: High score, record
@@ -85,20 +100,14 @@ A run faster than the best time, or the first run when there's no best time yet.
 The dotted grid the cursor moves around.
 _Avoid_: Grid
 
-**Cursor**:
-The block the player moves with h, j, k and l.
-_Avoid_: Player
+## wb
 
-**Target**:
-The `✕` the player moves the cursor onto.
-_Avoid_: Goal
+**Passage**:
+The lines of text a wb run is played on.
+_Avoid_: Text, buffer
 
-**Hit**:
-Moving the cursor onto the target, which makes a new target appear.
-_Avoid_: Touch, catch
-
-**Progress**:
-How many hits the player has made out of the number needed to finish the run.
+**Word**:
+A word in vim's sense: a run of letters, digits and `_`, or a run of other non-blank characters. So punctuation is its own word, and `don't` is three words: `don`, `'` and `t`.
 
 ## Look
 

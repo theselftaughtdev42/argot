@@ -1,5 +1,7 @@
 import { mountHjklDrill } from "./hjkl/app";
 import { help as hjklHelp } from "./hjkl/renderer";
+import { mountWbDrill } from "./wb/app";
+import { help as wbHelp } from "./wb/renderer";
 
 /** The screens of a drill the shell tells apart to pick hints and quit rules. */
 export type DrillScreen = "play" | "results";
@@ -56,4 +58,7 @@ export interface Drill {
 }
 
 /** Every drill the shell can list with `ls` and launch with `vim <name>`. */
-export const drills = new Map<string, Drill>([["hjkl", { mount: mountHjklDrill, help: hjklHelp }]]);
+export const drills = new Map<string, Drill>([
+  ["hjkl", { mount: mountHjklDrill, help: hjklHelp }],
+  ["wb", { mount: mountWbDrill, help: wbHelp }],
+]);
