@@ -103,7 +103,7 @@ _Avoid_: Grid
 ## wb
 
 **Passage**:
-The lines of text a wb run is played on.
+The lines of text a wb run is played on, picked at random from wb's list at the start of each run and kept until it ends.
 _Avoid_: Text, buffer
 
 **Word**:
