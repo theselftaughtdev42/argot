@@ -215,7 +215,8 @@ html, body {
   filter: grayscale(1);
 }
 /* ...and its cursor holds still, so only the command line's blinks */
-.drill-greyed .ag-cursor { animation: none; }
+.drill-greyed .ag-cursor,
+.drill-greyed .ag-passage__cursor { animation: none; }
 
 /* every drill's help page is laid out like a vim help file: a tagged first
    line, then sections under full-width === rules, each heading with its tag
@@ -267,7 +268,7 @@ html, body {
 .ag-help__keys > div { display: contents; }
 .ag-help__keys dd { margin: 0; }
 
-/* ---------- hjkl ---------- */
+/* ---------- play screen ---------- */
 
 .ag-play {
   display: flex;
@@ -277,8 +278,35 @@ html, body {
 }
 .ag-play__info { display: flex; gap: 28px; }
 
+/* ---------- wb ---------- */
+
+.ag-passage {
+  margin: 0;
+  white-space: pre;
+  font-family: inherit;
+  /* lines run up to 60 columns; shrink so the passage never forces a horizontal scroll */
+  font-size: clamp(8px, 2.5vw, 19px);
+  line-height: 1.8;
+}
+/* a block over the character, like vim's normal-mode cursor; it blinks without hiding the character */
+.ag-passage__cursor {
+  background: var(--ag-cursor);
+  color: var(--ag-bg);
+  animation: ag-passage-blink 1s steps(1) infinite;
+}
+@keyframes ag-passage-blink { 50% { background: transparent; color: inherit; } }
+.ag-passage__target { color: var(--ag-target); font-weight: var(--ag-weight-bold); }
+.ag-passage__target-rest { color: var(--ag-target-tint); }
+/* underlined end to end, so a target that's only punctuation is still easy to spot */
+.ag-passage__target,
+.ag-passage__target-rest {
+  text-decoration: underline 2px var(--ag-target);
+  text-underline-offset: 4px;
+}
+
 /* ---------- accessibility ---------- */
 
 @media (prefers-reduced-motion: reduce) {
-  .ag-cursor { animation: none; }
+  .ag-cursor,
+  .ag-passage__cursor { animation: none; }
 }

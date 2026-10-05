@@ -2,6 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mountApp } from "./app";
 import { BOARD_SIZE, HITS_TO_WIN } from "./drills/hjkl/engine";
+import { HITS_TO_WIN as WB_HITS_TO_WIN } from "./drills/wb/engine";
 
 let listeners: [string, EventListenerOrEventListenerObject][];
 
@@ -177,7 +178,7 @@ describe("home command line", () => {
     const root = load();
     run("ls");
     expect(root.textContent).not.toMatch(/\bls\b/);
-    expect([...root.querySelectorAll(".ag-ls li")].map((li) => li.textContent)).toEqual(["hjkl"]);
+    expect([...root.querySelectorAll(".ag-ls li")].map((li) => li.textContent)).toEqual(["hjkl", "wb"]);
     expect(textOf(root, ".home-hint")).toBe(VIM_HINT);
     expect(keysIn(root, ".home-hint")).toEqual(["vim"]);
     expect(textOf(root, ".prompt-input")).toBe("");
@@ -1352,5 +1353,162 @@ describe("key routing", () => {
     run(":q");
     playToCompletion(root);
     expect(keydownListeners()).toBe(1);
+  });
+});
+
+const PASSAGE = ".ag-passage";
+const WB_CURSOR = ".ag-passage__cursor";
+const WB_TARGET = ".ag-passage__target";
+
+/** Where `selector`'s element starts in the passage's text, with its lines joined by newlines. */
+function passageOffset(root: HTMLElement, selector: string): number {
+  const passage = root.querySelector(PASSAGE)!;
+  const range = document.createRange();
+  range.setStart(passage, 0);
+  range.setEndBefore(passage.querySelector(selector)!);
+  return range.toString().length;
+}
+
+/** Presses w or b toward the target, as a player would. */
+function jumpTowardTarget(root: HTMLElement): void {
+  press(passageOffset(root, WB_CURSOR) < passageOffset(root, WB_TARGET) ? "w" : "b");
+}
+
+function playWbToCompletion(root: HTMLElement): void {
+  while (screenOf(root) === "screen-play") jumpTowardTarget(root);
+}
+
+describe("wb", () => {
+  it("vim wb goes straight to the play screen, with the timer at zero", () => {
+    const root = load();
+    run("vim wb");
+    expect(screenOf(root)).toBe("screen-play");
+    expect(textOf(root, ".ag-statusline")).toContain("wb");
+    expect(textOf(root, ".progress")).toBe(`0/${WB_HITS_TO_WIN}`);
+    expect(textOf(root, ".timer")).toBe("0.00s");
+  });
+
+  it("asks the player to reach the target using w b, above the passage, with the timer and progress beneath", () => {
+    const root = load();
+    run("vim wb");
+    const instructions = root.querySelector(".ag-play > :first-child")!;
+    expect(instructions.textContent).toBe("reach the target using w b");
+    expect(instructions.querySelector(".ag-key")!.textContent).toBe("w b");
+    const passage = root.querySelector(PASSAGE)!;
+    expect(instructions.compareDocumentPosition(passage) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    for (const selector of [".timer", ".progress"]) {
+      expect(passage.compareDocumentPosition(root.querySelector(selector)!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    }
+  });
+
+  it("draws the passage with the cursor on its first word and one target on a word start", () => {
+    const root = load();
+    run("vim wb");
+    const text = textOf(root, PASSAGE)!;
+    expect(text.split("\n").length).toBeGreaterThan(1);
+    expect(root.querySelectorAll(WB_CURSOR)).toHaveLength(1);
+    expect(passageOffset(root, WB_CURSOR)).toBe(text.search(/\S/));
+    expect(root.querySelectorAll(WB_TARGET)).toHaveLength(1);
+    const target = passageOffset(root, WB_TARGET);
+    expect(textOf(root, WB_TARGET)).toHaveLength(1);
+    expect(target).not.toBe(passageOffset(root, WB_CURSOR));
+    // A word start: the character before it is a blank or of the other class.
+    const word = (char: string | undefined) => (char === undefined || /\s/.test(char) ? "blank" : /\w/.test(char) ? "keyword" : "other");
+    expect(word(text[target])).not.toBe("blank");
+    expect(word(text[target - 1])).not.toBe(word(text[target]));
+  });
+
+  it("only w and b move the cursor: h, l, digits and arrows do nothing", () => {
+    const root = load();
+    run("vim wb");
+    const start = passageOffset(root, WB_CURSOR);
+    for (const key of ["l", "h", "j", "k", "3", "0", "ArrowRight", "ArrowDown", "e", "W"]) press(key);
+    expect(passageOffset(root, WB_CURSOR)).toBe(start);
+    expect(textOf(root, ".timer")).toBe("0.00s");
+
+    press("w");
+    const next = passageOffset(root, WB_CURSOR);
+    expect(next).toBeGreaterThan(start);
+    press("w", { repeat: true });
+    expect(passageOffset(root, WB_CURSOR)).toBe(next);
+    press("b");
+    expect(passageOffset(root, WB_CURSOR)).toBe(start);
+  });
+
+  it("counts a hit when the cursor reaches the target", () => {
+    const root = load();
+    run("vim wb");
+    while (textOf(root, ".progress") === `0/${WB_HITS_TO_WIN}`) jumpTowardTarget(root);
+    expect(textOf(root, ".progress")).toBe(`1/${WB_HITS_TO_WIN}`);
+    expect(root.querySelectorAll(WB_TARGET)).toHaveLength(1);
+  });
+
+  it(":help shows wb's summary, description, keys and goal", () => {
+    const root = load();
+    run("vim wb");
+    openHelp();
+    const title = [...root.querySelectorAll(".ag-help__title > span")].map((part) => part.textContent);
+    expect(title).toEqual(["*wb.txt*", "jump forward and back a word at a time"]);
+    expect(helpSection(root, "DESCRIPTION")).toBe(
+      "w jumps to the start of the next word and b back to the start of the previous one, which is much faster than holding l or h. Punctuation counts as its own word, just like in vim.",
+    );
+    const keys = [...root.querySelectorAll(".ag-help__keys > div")].map((row) => [
+      row.querySelector("dt.ag-key")!.textContent,
+      row.querySelector("dd")!.textContent,
+    ]);
+    expect(keys).toEqual([
+      ["w", "next word start"],
+      ["b", "previous word start"],
+    ]);
+    expect(helpSection(root, "GOAL")).toBe(`Hit ${WB_HITS_TO_WIN} targets as fast as you can.`);
+  });
+
+  it("a full run reaches results, where :w saves wb's best time without touching hjkl's and starts the next run", () => {
+    localStorage.setItem("hjkl:bestTimeMs", "14320");
+    const root = load();
+    run("vim wb");
+    playWbToCompletion(root);
+    expect(screenOf(root)).toBe("screen-results");
+    expect(textOf(root, ".final-time")).toMatch(/^\d+\.\d\ds$/);
+    expect(root.querySelector(".new-best")).not.toBeNull();
+
+    press("Escape");
+    run(":w");
+    expect(localStorage.getItem("wb:bestTimeMs")).not.toBeNull();
+    expect(localStorage.getItem("hjkl:bestTimeMs")).toBe("14320");
+    expect(screenOf(root)).toBe("screen-play");
+    expect(textOf(root, ".progress")).toBe(`0/${WB_HITS_TO_WIN}`);
+    expect(textOf(root, ".timer")).toBe("0.00s");
+  });
+
+  it(":wq saves wb's best time and returns home", () => {
+    const root = load();
+    run("vim wb");
+    playWbToCompletion(root);
+    press("Escape");
+    run(":wq");
+    expect(screenOf(root)).toBe("home");
+    expect(localStorage.getItem("wb:bestTimeMs")).not.toBeNull();
+    expect(localStorage.getItem("hjkl:bestTimeMs")).toBeNull();
+  });
+
+  it(":q refuses once the run has started, and :q! leaves", () => {
+    const root = load();
+    run("vim wb");
+    press("w");
+    press("Escape");
+    run(":q");
+    expect(textOf(root, ".ag-error")).toBe(PLAY_E37);
+    run(":q!");
+    expect(screenOf(root)).toBe("home");
+  });
+
+  it("shows the same hints and :argot list as hjkl", () => {
+    const root = load();
+    run("vim wb");
+    expect(hintParts(root)).toEqual(PLAY_HINT);
+    press("Escape");
+    run(":argot");
+    expect(commandList(root, RESPONSE).map(([usage]) => usage)).toEqual([":help", ":q", ":q!", ":argot"]);
   });
 });

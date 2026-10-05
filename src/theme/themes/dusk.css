@@ -15,7 +15,8 @@
   --ag-accent: #7aa2f7;      /* drill names, cursor */
   --ag-highlight: #e0af68;   /* keys/commands in hints, logo colon */
   --ag-prompt: #9ece6a;      /* shell prompt symbol */
-  --ag-target: #f7768e;      /* target on the board */
+  --ag-target: #f7768e;      /* target on the board, and the target word's landing character */
+  --ag-target-tint: #b07d93; /* the rest of the target word in a passage */
   --ag-error: #f7768e;       /* shell and command-line errors */
 
   /* cursor */
