@@ -1,9 +1,11 @@
 import { createRun, move, type Direction, type RunState } from "./engine";
 import { directionFor } from "./input";
-import { Timer } from "./timer";
-import { getBestTime, isNewBest as wouldBeNewBest, saveBestTimeIfBetter } from "./storage";
+import { Timer } from "../shared/timer";
+import { getBestTime, isNewBest as wouldBeNewBest, saveBestTimeIfBetter } from "../shared/storage";
 import { renderPlay, renderElapsed, renderResults } from "./renderer";
 import type { DrillScreen, DrillSession } from "../registry";
+
+const DRILL = "hjkl";
 
 export function mountHjklDrill(
   root: HTMLElement,
@@ -29,10 +31,10 @@ export function mountHjklDrill(
       timer.stop();
       cancelAnimationFrame(animationFrame);
       finalTimeMs = timer.elapsedMs();
-      isNewBest = wouldBeNewBest(finalTimeMs);
+      isNewBest = wouldBeNewBest(DRILL, finalTimeMs);
       screen = "results";
       onScreenChange("results");
-      renderResults(root, finalTimeMs, isNewBest, getBestTime());
+      renderResults(root, finalTimeMs, isNewBest, getBestTime(DRILL));
     } else {
       renderPlay(root, state, timer.elapsedMs());
     }
@@ -59,7 +61,7 @@ export function mountHjklDrill(
       return state.status !== "idle";
     },
     save() {
-      if (screen === "results") saveBestTimeIfBetter(finalTimeMs);
+      if (screen === "results") saveBestTimeIfBetter(DRILL, finalTimeMs);
     },
     destroy() {
       cancelAnimationFrame(animationFrame);

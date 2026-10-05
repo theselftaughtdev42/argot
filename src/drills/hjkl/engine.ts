@@ -1,16 +1,8 @@
-export const BOARD_SIZE = 10;
-export const HITS_TO_WIN = devHitsOverride() ?? 15;
-export const MIN_SPAWN_DISTANCE = 5;
+import { hitsToWin } from "../shared/hits";
 
-/**
- * Dev-only: set VITE_HJKL_HITS (e.g. in .env.local) to shorten runs while
- * running `pnpm dev`. Ignored in builds and tests.
- */
-function devHitsOverride(): number | null {
-  if (import.meta.env.MODE !== "development") return null;
-  const hits = Number(import.meta.env.VITE_HJKL_HITS);
-  return Number.isInteger(hits) && hits > 0 ? hits : null;
-}
+export const BOARD_SIZE = 10;
+export const HITS_TO_WIN = hitsToWin(15);
+export const MIN_SPAWN_DISTANCE = 5;
 
 export type Direction = "h" | "j" | "k" | "l";
 export type RunStatus = "idle" | "playing" | "complete";
