@@ -2,24 +2,23 @@ import { createRun, move, type Motion, type Passage, type RunState } from "./eng
 import { motionFor } from "./input";
 import { Timer } from "../shared/timer";
 import { getBestTime, isNewBest as wouldBeNewBest, saveBestTimeIfBetter } from "../shared/storage";
+import { PASSAGES } from "./passages";
 import { renderPlay, renderElapsed, renderResults } from "./renderer";
 import type { DrillScreen, DrillSession } from "../registry";
 
 const DRILL = "wb";
 
-// A stand-in until there's a list of passages to pick from.
-const PASSAGE: Passage = [
-  "The fox didn't wait for the bus; it ran, quick and low,",
-  "across the half-frozen field. Nobody saw it go - not",
-  "the farmer, not the dog, not even the crows (who see",
-  "everything). By dawn, it was home: warm, fed and asleep.",
-];
+/** A passage picked at random, which a run keeps from start to finish. */
+function pickPassage(): Passage {
+  return PASSAGES[Math.floor(Math.random() * PASSAGES.length)]!.lines;
+}
 
 export function mountWbDrill(
   root: HTMLElement,
   onScreenChange: (screen: DrillScreen) => void,
 ): DrillSession {
-  let state: RunState = createRun(PASSAGE);
+  // Set by startRun, which runs before the session is handed back.
+  let state: RunState;
   let screen: DrillScreen = "play";
   let finalTimeMs = 0;
   let isNewBest = false;
@@ -49,7 +48,7 @@ export function mountWbDrill(
   }
 
   function startRun(): void {
-    state = createRun(PASSAGE);
+    state = createRun(pickPassage());
     timer.reset();
     screen = "play";
     onScreenChange("play");

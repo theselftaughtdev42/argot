@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mountApp } from "./app";
 import { BOARD_SIZE, HITS_TO_WIN } from "./drills/hjkl/engine";
 import { HITS_TO_WIN as WB_HITS_TO_WIN } from "./drills/wb/engine";
+import { PASSAGES } from "./drills/wb/passages";
 
 let listeners: [string, EventListenerOrEventListenerObject][];
 
@@ -1418,6 +1419,30 @@ describe("wb", () => {
     expect(word(text[target - 1])).not.toBe(word(text[target]));
   });
 
+  it("picks each run's passage at random, including the runs :w and :q from help start", () => {
+    // Every draw, the passage's and the targets', comes from this source.
+    const random = vi.spyOn(Math, "random").mockReturnValue(0);
+    const root = load();
+    run("vim wb");
+    expect(textOf(root, PASSAGE)).toBe(PASSAGES[0]!.lines.join("\n"));
+
+    // The passage stays put for the whole run, whatever is drawn meanwhile.
+    random.mockReturnValue(0.99);
+    while (textOf(root, ".progress") === `0/${WB_HITS_TO_WIN}`) jumpTowardTarget(root);
+    expect(textOf(root, PASSAGE)).toBe(PASSAGES[0]!.lines.join("\n"));
+
+    playWbToCompletion(root);
+    press("Escape");
+    run(":w");
+    expect(textOf(root, PASSAGE)).toBe(PASSAGES[PASSAGES.length - 1]!.lines.join("\n"));
+
+    random.mockReturnValue(1.5 / PASSAGES.length);
+    openHelp();
+    press("Escape");
+    run(":q");
+    expect(textOf(root, PASSAGE)).toBe(PASSAGES[1]!.lines.join("\n"));
+  });
+
   it("only w and b move the cursor: h, l, digits and arrows do nothing", () => {
     const root = load();
     run("vim wb");
@@ -1474,7 +1499,8 @@ describe("wb", () => {
 
     press("Escape");
     run(":w");
-    expect(localStorage.getItem("wb:bestTimeMs")).not.toBeNull();
+    expect(Number(localStorage.getItem("wb:bestTimeMs"))).toBeGreaterThan(0);
+    expect(Object.keys(localStorage).filter((key) => key.startsWith("wb:"))).toEqual(["wb:bestTimeMs"]);
     expect(localStorage.getItem("hjkl:bestTimeMs")).toBe("14320");
     expect(screenOf(root)).toBe("screen-play");
     expect(textOf(root, ".progress")).toBe(`0/${WB_HITS_TO_WIN}`);
