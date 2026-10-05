@@ -33,62 +33,75 @@ afterEach(() => {
 describe("best-time storage", () => {
   it("reports no best time when nothing is stored", async () => {
     const { getBestTime } = await loadStorage();
-    expect(getBestTime()).toBeNull();
+    expect(getBestTime("hjkl")).toBeNull();
   });
 
   it("stores a first-ever run as the best and reports it as new", async () => {
     const { getBestTime, saveBestTimeIfBetter } = await loadStorage();
-    expect(saveBestTimeIfBetter(14320)).toBe(true);
-    expect(getBestTime()).toBe(14320);
+    expect(saveBestTimeIfBetter("hjkl", 14320)).toBe(true);
+    expect(getBestTime("hjkl")).toBe(14320);
   });
 
-  it("namespaces the key to this drill", async () => {
+  it("namespaces the key to the drill", async () => {
     const { saveBestTimeIfBetter } = await loadStorage();
-    saveBestTimeIfBetter(14320);
+    saveBestTimeIfBetter("hjkl", 14320);
     expect([...backing.keys()]).toEqual(["hjkl:bestTimeMs"]);
+  });
+
+  it("keeps each drill's best time separate", async () => {
+    const { getBestTime, isNewBest, saveBestTimeIfBetter } = await loadStorage();
+    saveBestTimeIfBetter("hjkl", 14320);
+    expect(getBestTime("wb")).toBeNull();
+    expect(isNewBest("wb", 20000)).toBe(true);
+
+    expect(saveBestTimeIfBetter("wb", 20000)).toBe(true);
+    expect(getBestTime("hjkl")).toBe(14320);
+    expect(getBestTime("wb")).toBe(20000);
+    expect(saveBestTimeIfBetter("hjkl", 15000)).toBe(false);
+    expect([...backing.keys()].sort()).toEqual(["hjkl:bestTimeMs", "wb:bestTimeMs"]);
   });
 
   it("replaces the best and reports new when a run beats it", async () => {
     const { getBestTime, saveBestTimeIfBetter } = await loadStorage();
-    saveBestTimeIfBetter(14320);
-    expect(saveBestTimeIfBetter(12000)).toBe(true);
-    expect(getBestTime()).toBe(12000);
+    saveBestTimeIfBetter("hjkl", 14320);
+    expect(saveBestTimeIfBetter("hjkl", 12000)).toBe(true);
+    expect(getBestTime("hjkl")).toBe(12000);
   });
 
   it("keeps the best and reports not new when a run is slower or ties", async () => {
     const { getBestTime, saveBestTimeIfBetter } = await loadStorage();
-    saveBestTimeIfBetter(12000);
-    expect(saveBestTimeIfBetter(15000)).toBe(false);
-    expect(saveBestTimeIfBetter(12000)).toBe(false);
-    expect(getBestTime()).toBe(12000);
+    saveBestTimeIfBetter("hjkl", 12000);
+    expect(saveBestTimeIfBetter("hjkl", 15000)).toBe(false);
+    expect(saveBestTimeIfBetter("hjkl", 12000)).toBe(false);
+    expect(getBestTime("hjkl")).toBe(12000);
   });
 
   it("checks whether a run would be a new best without saving it", async () => {
     const { getBestTime, isNewBest, saveBestTimeIfBetter } = await loadStorage();
-    expect(isNewBest(14320)).toBe(true);
-    expect(getBestTime()).toBeNull();
+    expect(isNewBest("hjkl", 14320)).toBe(true);
+    expect(getBestTime("hjkl")).toBeNull();
     expect(backing.size).toBe(0);
 
-    saveBestTimeIfBetter(14320);
-    expect(isNewBest(12000)).toBe(true);
-    expect(isNewBest(14320)).toBe(false);
-    expect(isNewBest(15000)).toBe(false);
-    expect(getBestTime()).toBe(14320);
+    saveBestTimeIfBetter("hjkl", 14320);
+    expect(isNewBest("hjkl", 12000)).toBe(true);
+    expect(isNewBest("hjkl", 14320)).toBe(false);
+    expect(isNewBest("hjkl", 15000)).toBe(false);
+    expect(getBestTime("hjkl")).toBe(14320);
   });
 
   it("survives a page reload", async () => {
     const before = await loadStorage();
-    before.saveBestTimeIfBetter(14320);
+    before.saveBestTimeIfBetter("hjkl", 14320);
     const after = await loadStorage();
-    expect(after.getBestTime()).toBe(14320);
+    expect(after.getBestTime("hjkl")).toBe(14320);
   });
 
   it("treats a corrupt stored value as no best, so the next run becomes the best", async () => {
     backing.set("hjkl:bestTimeMs", "not a number");
     const { getBestTime, saveBestTimeIfBetter } = await loadStorage();
-    expect(getBestTime()).toBeNull();
-    expect(saveBestTimeIfBetter(20000)).toBe(true);
-    expect(getBestTime()).toBe(20000);
+    expect(getBestTime("hjkl")).toBeNull();
+    expect(saveBestTimeIfBetter("hjkl", 20000)).toBe(true);
+    expect(getBestTime("hjkl")).toBe(20000);
   });
 
   it("degrades gracefully when localStorage is unavailable", async () => {
@@ -101,7 +114,7 @@ describe("best-time storage", () => {
       },
     });
     const { getBestTime, saveBestTimeIfBetter } = await loadStorage();
-    expect(getBestTime()).toBeNull();
-    expect(() => saveBestTimeIfBetter(14320)).not.toThrow();
+    expect(getBestTime("hjkl")).toBeNull();
+    expect(() => saveBestTimeIfBetter("hjkl", 14320)).not.toThrow();
   });
 });
