@@ -82,7 +82,79 @@ function renderThemePicker({ themes, selected, saved }: ThemePicker): string {
   `;
 }
 
+const TAGLINE = "train your fingers to think in vim.";
+
+/** How long home takes to glide between its full-size and compact layouts. */
+const GLIDE_MS = 320;
+
+/** Where the logo, the prompt and the tagline (when it showed) were before home was redrawn. */
+type HomeLayout = { logo: DOMRect; prompt: DOMRect; tagline: DOMRect | null };
+
+function measureHome(root: HTMLElement): HomeLayout | null {
+  const logo = root.querySelector(".ag-logo");
+  const prompt = root.querySelector(".home-prompt");
+  const tagline = root.querySelector(".ag-tagline");
+  return logo && prompt
+    ? { logo: logo.getBoundingClientRect(), prompt: prompt.getBoundingClientRect(), tagline: tagline?.getBoundingClientRect() ?? null }
+    : null;
+}
+
+/**
+ * The tagline's fade-in played backwards: the compact home has no tagline, so
+ * a copy stays where it was and fades out while the logo leaves, then goes.
+ */
+function fadeOutTagline(home: Element, from: DOMRect): void {
+  const ghost = document.createElement("div");
+  ghost.className = "home-tagline-ghost";
+  ghost.setAttribute("aria-hidden", "true");
+  ghost.textContent = TAGLINE;
+  Object.assign(ghost.style, { left: `${from.left}px`, top: `${from.top}px`, width: `${from.width}px` });
+  home.append(ghost);
+  ghost.animate([{ opacity: 1 }, { opacity: 0 }], { duration: GLIDE_MS / 2, fill: "forwards" }).finished.then(
+    () => ghost.remove(),
+    () => ghost.remove(),
+  );
+}
+
+/** Plays an element back from where it was to where it is now, scaling with it when `scale` is set. */
+function glide(element: Element, from: DOMRect, scale: boolean): void {
+  const to = element.getBoundingClientRect();
+  const ratio = scale && to.width ? from.width / to.width : 1;
+  element.animate(
+    [
+      { transformOrigin: "top left", transform: `translate(${from.left - to.left}px, ${from.top - to.top}px) scale(${ratio})` },
+      { transformOrigin: "top left", transform: "none" },
+    ],
+    { duration: GLIDE_MS, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" },
+  );
+}
+
+/**
+ * Moves home between its full-size and compact layouts: the logo glides
+ * between the middle and the top, scaling as it goes, and the prompt glides to
+ * its new place, while whatever's new (the command's response, or the tagline)
+ * fades in and the tagline, when it's leaving, fades out. Home is redrawn from scratch, so this plays the old positions back
+ * with transforms rather than a CSS transition.
+ */
+function glideHome(root: HTMLElement, from: HomeLayout): void {
+  const logo = root.querySelector(".ag-logo");
+  const prompt = root.querySelector(".home-prompt");
+  if (!logo || !prompt || typeof logo.animate !== "function") return;
+  if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+  glide(logo, from.logo, true);
+  glide(prompt, from.prompt, false);
+  const home = root.querySelector(".ag-home");
+  if (from.tagline && home && !root.querySelector(".ag-tagline")) fadeOutTagline(home, from.tagline);
+  // What's new has nowhere to glide from; it waits for the logo to clear its space.
+  for (const element of root.querySelectorAll(".home-response, .ag-tagline")) {
+    element.animate([{ opacity: 0 }, { opacity: 1 }], { duration: GLIDE_MS / 2, delay: GLIDE_MS / 2, fill: "backwards" });
+  }
+}
+
 export function renderHome(root: HTMLElement, { input, last, compact, picker }: HomeState): void {
+  // Read before the redraw: a home switching between full size and compact glides into its new layout.
+  const brandWas = root.querySelector(".ag-brand");
+  const glideFrom = brandWas && brandWas.classList.contains("ag-brand--compact") !== compact ? measureHome(root) : null;
   const hint =
     last?.name === "ls"
       ? `type <span class="ag-key">vim</span> and a drill name`
@@ -92,7 +164,7 @@ export function renderHome(root: HTMLElement, { input, last, compact, picker }: 
   const brand = `
     <header class="ag-brand${compact ? " ag-brand--compact" : ""}">
       <h1 class="ag-logo">argot</h1>
-      ${compact ? "" : `<div class="ag-tagline">train your fingers to think in vim.</div>`}
+      ${compact ? "" : `<div class="ag-tagline">${TAGLINE}</div>`}
     </header>
   `;
   root.innerHTML = `
@@ -100,8 +172,8 @@ export function renderHome(root: HTMLElement, { input, last, compact, picker }: 
       ${compact ? brand : ""}
       <div class="ag-stack${compact ? "" : " ag-stack--narrow"}">
         ${compact ? "" : brand}
-        ${last ? renderOutput(last.output) : ""}
-        <div>
+        ${last ? `<div class="home-response">${renderOutput(last.output)}</div>` : ""}
+        <div class="home-prompt">
           <div class="ag-line ag-prompt"><span class="prompt-input">${escapeHtml(input)}</span><span class="ag-cursor"></span></div>
           <div class="ag-hint home-hint">${hint}</div>
         </div>
@@ -109,6 +181,7 @@ export function renderHome(root: HTMLElement, { input, last, compact, picker }: 
     </main>
     ${picker ? renderThemePicker(picker) : ""}
   `;
+  if (glideFrom) glideHome(root, glideFrom);
 }
 
 /**

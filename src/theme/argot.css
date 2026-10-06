@@ -44,6 +44,8 @@ html, body {
 
 .ag-logo {
   margin: 0;
+  /* hugs the word, so home measures the logo itself when gliding it between layouts */
+  width: fit-content;
   font-size: 64px;
   line-height: 1;
   font-weight: var(--ag-weight-bold);
@@ -55,7 +57,9 @@ html, body {
   content: ":";
   color: var(--ag-logo-colon);
 }
-.ag-tagline { color: var(--ag-fg-muted); margin-top: 10px; }
+.ag-tagline, .home-tagline-ghost { color: var(--ag-fg-muted); margin-top: 10px; }
+/* the tagline left behind, fading out, as home goes compact */
+.home-tagline-ghost { position: fixed; margin: 0; pointer-events: none; }
 
 /* compact: once the shell has output, the logo shrinks to the top center */
 .ag-brand--compact { text-align: center; }

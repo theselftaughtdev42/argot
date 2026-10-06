@@ -392,6 +392,26 @@ describe("home logo", () => {
     expect(isCompact(root)).toBe(true);
   });
 
+  it("goes back to full size, with the tagline and without the last response, on Esc", () => {
+    const root = load();
+    run("ls");
+    type("vi");
+    press("Escape");
+    expect(isCompact(root)).toBe(false);
+    expect(textOf(root, ".ag-tagline")).toBe("train your fingers to think in vim.");
+    expect(root.querySelector(".ag-ls")).toBeNull();
+    expect(textOf(root, ".home-hint")).toBe("type argot and press enter");
+    expect(textOf(root, ".prompt-input")).toBe("vi");
+  });
+
+  it("goes compact again on the next command after Esc", () => {
+    const root = load();
+    run("ls");
+    press("Escape");
+    run("ls");
+    expect(isCompact(root)).toBe(true);
+  });
+
   it("is full size again after a reload", () => {
     load();
     run("ls");
