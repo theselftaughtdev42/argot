@@ -1,6 +1,7 @@
 // Every theme's tokens load up front (they're only custom properties), then
 // the components that read them.
 import "./themes/dusk.css";
+import "./themes/paper.css";
 import "./themes/synth.css";
 import "./argot.css";
 
@@ -20,6 +21,11 @@ export const THEMES: Record<string, ThemeDefinition> = {
         import("@fontsource/jetbrains-mono/400.css"),
         import("@fontsource/jetbrains-mono/700.css"),
       ]),
+  },
+  paper: {
+    label: "Paper",
+    loadFont: () =>
+      Promise.all([import("@fontsource/ibm-plex-mono/400.css"), import("@fontsource/ibm-plex-mono/600.css")]),
   },
   synth: {
     label: "Synth",

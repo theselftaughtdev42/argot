@@ -1,0 +1,52 @@
+/* Paper — cool light theme.
+   Only tokens live here. Components live in ../argot.css and read these tokens only. */
+[data-theme="paper"] {
+  /* type */
+  --ag-font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --ag-weight-bold: 600;
+
+  /* surfaces + text */
+  --ag-color-scheme: light;
+  --ag-bg: #eef1f0;
+  --ag-fg: #1c2321;
+  --ag-fg-muted: #5b6663;
+  --ag-text-glow: none;
+
+  /* accents */
+  --ag-accent: #0b6e69;      /* teal: drill names, cursor */
+  --ag-highlight: #b5482a;   /* rust: keys/commands in hints */
+  --ag-prompt: #0b6e69;      /* teal: shell prompt symbol */
+  --ag-target: #b5482a;      /* rust: target on the board, and the target word's landing character */
+  --ag-target-tint: #9a6a5c; /* the rest of the target word in a passage */
+  --ag-error: #c0245c;       /* shell and command-line errors: crimson, so it isn't mistaken for a target */
+
+  /* logo */
+  --ag-logo-fg: #1c2321;
+  --ag-logo-colon: #b5482a;
+
+  /* neon */
+  --ag-glow: none;           /* on the logo, ls, the prompt and board pieces */
+  --ag-cursor-glow: none;
+
+  /* cursor */
+  --ag-cursor: #1c2321;
+
+  /* dividers */
+  --ag-rule: #b4bdba;        /* the === rules between a help page's sections, and the line over a command response */
+
+  /* line numbers */
+  --ag-gutter: #8a9592;      /* relative line numbers in rel-jk's gutter */
+  --ag-cursorline: #dfe4e2;  /* the tint across the cursor's line in rel-jk */
+
+  /* board */
+  --ag-board-dot: #b4bdba;
+
+  /* vim statusline: dark bar on light page */
+  --ag-statusline-bg: #1c2321;
+  --ag-statusline-fg: #eef1f0;
+  --ag-mode-bg: #0b6e69;
+  --ag-mode-fg: #eef1f0;
+
+  /* glyphs */
+  --ag-prompt-symbol: "$ ";
+}

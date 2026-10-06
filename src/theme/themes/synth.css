@@ -6,6 +6,7 @@
   --ag-weight-bold: 700;
 
   /* surfaces + text */
+  --ag-color-scheme: dark;
   --ag-bg: #160b22;
   --ag-fg: #f2e9ff;
   --ag-fg-muted: #9b88b8;
