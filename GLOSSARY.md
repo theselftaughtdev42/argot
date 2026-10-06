@@ -125,7 +125,7 @@ How many lines a line is from the cursor's line.
 ## Look
 
 **Theme**:
-A named look for argot (colours and font), such as Dusk or Synth. The visitor's choice is saved in the browser and comes back on the next visit.
+A named look for argot (colours and font), such as Dusk, Paper or Synth. The visitor's choice is saved in the browser and comes back on the next visit.
 _Avoid_: Colorscheme, skin
 
 **Theme picker**:
