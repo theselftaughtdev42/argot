@@ -5,10 +5,16 @@ import "./themes/paper.css";
 import "./themes/synth.css";
 import "./argot.css";
 
+/** Whether a theme is light text on a dark background or the reverse, in the order the picker groups them. */
+export const SCHEMES = ["dark", "light"] as const;
+export type Scheme = (typeof SCHEMES)[number];
+
 /** A theme: a token file at `themes/<name>.css` plus an entry in `THEMES`. */
 export interface ThemeDefinition {
   /** Human-readable name. */
   label: string;
+  /** Matches the token file's `--ag-color-scheme`. */
+  scheme: Scheme;
   /** Loads the theme's font. Called each time the theme is applied, so it's lazy per theme. */
   loadFont?: () => Promise<unknown>;
 }
@@ -16,6 +22,7 @@ export interface ThemeDefinition {
 export const THEMES: Record<string, ThemeDefinition> = {
   dusk: {
     label: "Dusk",
+    scheme: "dark",
     loadFont: () =>
       Promise.all([
         import("@fontsource/jetbrains-mono/400.css"),
@@ -24,11 +31,13 @@ export const THEMES: Record<string, ThemeDefinition> = {
   },
   paper: {
     label: "Paper",
+    scheme: "light",
     loadFont: () =>
       Promise.all([import("@fontsource/ibm-plex-mono/400.css"), import("@fontsource/ibm-plex-mono/600.css")]),
   },
   synth: {
     label: "Synth",
+    scheme: "dark",
     loadFont: () =>
       Promise.all([import("@fontsource/space-mono/400.css"), import("@fontsource/space-mono/700.css")]),
   },

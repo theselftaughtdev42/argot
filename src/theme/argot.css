@@ -149,6 +149,18 @@ html, body {
   line-height: 1.7;
   text-shadow: var(--ag-text-glow);
 }
+/* scheme groups, and the hints below them, sit apart behind a thin rule */
+.ag-picker__group + .ag-picker__group {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--ag-rule);
+}
+.ag-picker__heading {
+  margin: 0;
+  padding: 0 20px;
+  font-size: 15px;
+  font-weight: normal;
+}
 .ag-picker__list { margin: 0; padding: 0; list-style: none; }
 .ag-picker__option {
   display: flex;
@@ -166,7 +178,9 @@ html, body {
   display: flex;
   flex-wrap: wrap;
   column-gap: 2ch;
-  padding: 0 20px;
+  margin-top: 12px;
+  padding: 12px 20px 0;
+  border-top: 1px solid var(--ag-rule);
   font-size: 15px;
 }
 
