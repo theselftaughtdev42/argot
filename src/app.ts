@@ -215,6 +215,10 @@ export function mountApp(root: HTMLElement): void {
       home.input = "";
       runCommand(line);
       if (drill) return;
+    } else if (event.key === "Escape") {
+      // Back to how home first looked, keeping whatever's half typed.
+      home.compact = false;
+      home.last = null;
     } else if (event.key === "ArrowUp" || event.key === "ArrowDown") {
       // Arrows would otherwise scroll the page.
       event.preventDefault();
