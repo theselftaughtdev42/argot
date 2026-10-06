@@ -40,7 +40,7 @@ _Avoid_: Help, tip
 ## Drills
 
 **Drill**:
-A timed exercise that repeats one vim skill until it becomes muscle memory, launched from home with `vim <name>`, which opens its play screen. hjkl and wb are drills.
+A timed exercise that repeats one vim skill until it becomes muscle memory, launched from home with `vim <name>`, which opens its play screen. hjkl, wb and rel-jk are drills.
 _Avoid_: Game, exercise, lesson
 
 **Drill frame**:
@@ -73,12 +73,16 @@ One attempt at a drill, from the first move to reaching the results screen. Open
 _Avoid_: Round, attempt, session
 
 **Cursor**:
-The block the player moves, with h, j, k and l in hjkl, or w and b in wb.
+The block the player moves, with h, j, k and l in hjkl, w and b in wb, or a count and j or k in rel-jk.
 _Avoid_: Player
 
 **Target**:
-Where the player moves the cursor to: the `✕` on hjkl's board, or the start of a marked word in wb.
+Where the player moves the cursor to: the `✕` on hjkl's board, the start of a marked word in wb, or a marked line in rel-jk.
 _Avoid_: Goal
+
+**Passage**:
+The lines of text a run of wb or rel-jk is played on. Each drill picks one at random from its own list at the start of a run and keeps it until the run ends.
+_Avoid_: Text, buffer
 
 **Hit**:
 Moving the cursor onto the target, which makes a new target appear.
@@ -102,12 +106,21 @@ _Avoid_: Grid
 
 ## wb
 
-**Passage**:
-The lines of text a wb run is played on, picked at random from wb's list at the start of each run and kept until it ends.
-_Avoid_: Text, buffer
-
 **Word**:
 A word in vim's sense: a run of letters, digits and `_`, or a run of other non-blank characters. So punctuation is its own word, and `don't` is three words: `don`, `'` and `t`.
+
+## rel-jk
+
+**Count**:
+The number typed before a motion to repeat it, e.g. `5` in `5j`.
+_Avoid_: Multiplier, prefix
+
+**Gutter**:
+The column of line numbers to the left of the passage.
+_Avoid_: Margin, ruler
+
+**Relative line number**:
+How many lines a line is from the cursor's line.
 
 ## Look
 

@@ -4,6 +4,8 @@ import { mountApp } from "./app";
 import { BOARD_SIZE, HITS_TO_WIN } from "./drills/hjkl/engine";
 import { HITS_TO_WIN as WB_HITS_TO_WIN } from "./drills/wb/engine";
 import { PASSAGES } from "./drills/wb/passages";
+import { HITS_TO_WIN as REL_JK_HITS_TO_WIN } from "./drills/rel-jk/engine";
+import { PASSAGES as REL_JK_PASSAGES } from "./drills/rel-jk/passages";
 
 let listeners: [string, EventListenerOrEventListenerObject][];
 
@@ -179,7 +181,7 @@ describe("home command line", () => {
     const root = load();
     run("ls");
     expect(root.textContent).not.toMatch(/\bls\b/);
-    expect([...root.querySelectorAll(".ag-ls li")].map((li) => li.textContent)).toEqual(["hjkl", "wb"]);
+    expect([...root.querySelectorAll(".ag-ls li")].map((li) => li.textContent)).toEqual(["hjkl", "wb", "rel-jk"]);
     expect(textOf(root, ".home-hint")).toBe(VIM_HINT);
     expect(keysIn(root, ".home-hint")).toEqual(["vim"]);
     expect(textOf(root, ".prompt-input")).toBe("");
@@ -1532,6 +1534,271 @@ describe("wb", () => {
   it("shows the same hints and :argot list as hjkl", () => {
     const root = load();
     run("vim wb");
+    expect(hintParts(root)).toEqual(PLAY_HINT);
+    press("Escape");
+    run(":argot");
+    expect(commandList(root, RESPONSE).map(([usage]) => usage)).toEqual([":help", ":q", ":q!", ":argot"]);
+  });
+});
+
+const REL_LINE = ".ag-rel__line";
+
+/** The index of the passage line matching `selector`. */
+function lineIndex(root: HTMLElement, selector: string): number {
+  return [...root.querySelectorAll(REL_LINE)].findIndex((line) => line.matches(selector));
+}
+
+const cursorLine = (root: HTMLElement) => lineIndex(root, ".ag-rel__line--cursor");
+const targetLine = (root: HTMLElement) => lineIndex(root, ".ag-rel__line--target");
+
+/** The gutter's numbers, top to bottom. */
+function gutter(root: HTMLElement): number[] {
+  return [...root.querySelectorAll(".ag-rel__number")].map((number) => Number(number.textContent));
+}
+
+/** The passage's text, its lines joined by newlines, without the gutter. */
+function relText(root: HTMLElement): string {
+  return [...root.querySelectorAll(".ag-rel__text")].map((text) => text.textContent!.trimEnd()).join("\n");
+}
+
+/** Reads the target's number off the gutter and jumps to it, as a player would. */
+function jumpToTarget(root: HTMLElement): void {
+  const target = root.querySelector(".ag-rel__line--target .ag-rel__number")!.textContent!;
+  type(`${target}${targetLine(root) > cursorLine(root) ? "j" : "k"}`);
+}
+
+function playRelJkToCompletion(root: HTMLElement): void {
+  while (screenOf(root) === "screen-play") jumpToTarget(root);
+}
+
+describe("rel-jk", () => {
+  it("vim rel-jk goes straight to the play screen, with the timer at zero", () => {
+    const root = load();
+    run("vim rel-jk");
+    expect(screenOf(root)).toBe("screen-play");
+    expect(textOf(root, ".ag-statusline")).toContain("rel-jk");
+    expect(textOf(root, ".progress")).toBe(`0/${REL_JK_HITS_TO_WIN}`);
+    expect(textOf(root, ".timer")).toBe("0.00s");
+  });
+
+  it("asks the player to reach the target using <count>j <count>k, above the passage, with the timer and progress beneath", () => {
+    const root = load();
+    run("vim rel-jk");
+    const instructions = root.querySelector(".ag-play > :first-child")!;
+    expect(instructions.textContent).toBe("reach the target using <count>j <count>k");
+    expect(instructions.querySelector(".ag-key")!.textContent).toBe("<count>j <count>k");
+    const passage = root.querySelector(".ag-rel")!;
+    expect(instructions.compareDocumentPosition(passage) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    for (const selector of [".timer", ".progress"]) {
+      expect(passage.compareDocumentPosition(root.querySelector(selector)!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    }
+  });
+
+  it("draws the passage with relative numbers in the gutter, 0 on the cursor's line", () => {
+    const root = load();
+    run("vim rel-jk");
+    const cursor = cursorLine(root);
+    const lines = root.querySelectorAll(REL_LINE).length;
+    expect(cursor).toBeGreaterThanOrEqual(Math.floor(lines / 3));
+    expect(cursor).toBeLessThan(Math.ceil((lines * 2) / 3));
+    expect(gutter(root)).toEqual(
+      Array.from({ length: lines }, (_, line) => Math.abs(line - cursor)),
+    );
+    // The cursor block sits on the first character of its line.
+    const block = root.querySelector(".ag-rel__line--cursor .ag-rel__text > :first-child")!;
+    expect(block.matches(".ag-passage__cursor")).toBe(true);
+    expect(root.querySelectorAll(".ag-passage__cursor")).toHaveLength(1);
+  });
+
+  it("marks one target, 2 to 15 lines from the cursor", () => {
+    const root = load();
+    run("vim rel-jk");
+    expect(root.querySelectorAll(".ag-rel__line--target")).toHaveLength(1);
+    const distance = Math.abs(targetLine(root) - cursorLine(root));
+    expect(distance).toBeGreaterThanOrEqual(2);
+    expect(distance).toBeLessThanOrEqual(15);
+  });
+
+  it("picks each run's passage at random, including the runs :w and :q from help start", () => {
+    // Every draw, the passage's, the start line's and the targets', comes from this source.
+    const random = vi.spyOn(Math, "random").mockReturnValue(0);
+    const root = load();
+    run("vim rel-jk");
+    expect(relText(root)).toBe(REL_JK_PASSAGES[0]!.lines.join("\n"));
+
+    // The passage stays put for the whole run, whatever is drawn meanwhile.
+    random.mockReturnValue(0.99);
+    jumpToTarget(root);
+    expect(relText(root)).toBe(REL_JK_PASSAGES[0]!.lines.join("\n"));
+
+    playRelJkToCompletion(root);
+    press("Escape");
+    run(":w");
+    expect(relText(root)).toBe(REL_JK_PASSAGES[REL_JK_PASSAGES.length - 1]!.lines.join("\n"));
+
+    random.mockReturnValue(1.5 / REL_JK_PASSAGES.length);
+    openHelp();
+    press("Escape");
+    run(":q");
+    expect(relText(root)).toBe(REL_JK_PASSAGES[1]!.lines.join("\n"));
+  });
+
+  it("<count>j moves down and <count>k up, including two-digit counts", () => {
+    // Starts on the first line of the middle third, with a target 2 lines down.
+    vi.spyOn(Math, "random").mockReturnValue(0);
+    const root = load();
+    run("vim rel-jk");
+    const start = cursorLine(root);
+    type("12j");
+    expect(cursorLine(root)).toBe(start + 12);
+    type("5k");
+    expect(cursorLine(root)).toBe(start + 7);
+    type("3k");
+    expect(cursorLine(root)).toBe(start + 4);
+  });
+
+  it("a count past the top or bottom stops on the first or last line", () => {
+    const root = load();
+    run("vim rel-jk");
+    const last = root.querySelectorAll(REL_LINE).length - 1;
+    type("99j");
+    expect(cursorLine(root)).toBe(last);
+    type("99k");
+    expect(cursorLine(root)).toBe(0);
+  });
+
+  it("a bare j or k, h, l, arrows and key repeat don't move the cursor or start the clock", () => {
+    const root = load();
+    run("vim rel-jk");
+    const start = cursorLine(root);
+    for (const key of ["j", "k", "h", "l", "ArrowDown", "ArrowUp", "w"]) press(key);
+    press("2");
+    press("j", { repeat: true });
+    expect(cursorLine(root)).toBe(start);
+    press("2", { repeat: true });
+    press("j");
+    expect(cursorLine(root)).toBe(start + 2);
+  });
+
+  it("a leading 0 doesn't start a count", () => {
+    const root = load();
+    run("vim rel-jk");
+    const start = cursorLine(root);
+    type("0j");
+    expect(cursorLine(root)).toBe(start);
+    expect(root.querySelector(".count")).toBeNull();
+    type("02j");
+    expect(cursorLine(root)).toBe(start + 2);
+  });
+
+  it("shows the pending count beside the timer and progress until a jump or another key drops it", () => {
+    const root = load();
+    run("vim rel-jk");
+    expect(root.querySelector(".count")).toBeNull();
+    type("1");
+    expect(textOf(root, ".ag-play__info .count")).toBe("1");
+    type("2");
+    expect(textOf(root, ".ag-play__info .count")).toBe("12");
+    press("x");
+    expect(root.querySelector(".count")).toBeNull();
+    type("2j");
+    expect(root.querySelector(".count")).toBeNull();
+  });
+
+  it("Esc drops the pending count as it opens the command line", () => {
+    const root = load();
+    run("vim rel-jk");
+    const start = cursorLine(root);
+    type("4");
+    press("Escape");
+    expect(root.querySelector(".count")).toBeNull();
+    press("Escape");
+    press("j");
+    expect(cursorLine(root)).toBe(start);
+  });
+
+  it("counts a hit when the cursor lands on the target", () => {
+    const root = load();
+    run("vim rel-jk");
+    jumpToTarget(root);
+    expect(textOf(root, ".progress")).toBe(`1/${REL_JK_HITS_TO_WIN}`);
+    expect(root.querySelectorAll(".ag-rel__line--target")).toHaveLength(1);
+  });
+
+  it(":q works after typing a count but before the first jump", () => {
+    const root = load();
+    run("vim rel-jk");
+    type("5");
+    press("Escape");
+    run(":q");
+    expect(screenOf(root)).toBe("home");
+  });
+
+  it(":q refuses once the run has started, and :q! leaves", () => {
+    const root = load();
+    run("vim rel-jk");
+    type("2k");
+    press("Escape");
+    run(":q");
+    expect(textOf(root, ".ag-error")).toBe(PLAY_E37);
+    run(":q!");
+    expect(screenOf(root)).toBe("home");
+  });
+
+  it(":help shows rel-jk's summary, description, keys and goal", () => {
+    const root = load();
+    run("vim rel-jk");
+    openHelp();
+    const title = [...root.querySelectorAll(".ag-help__title > span")].map((part) => part.textContent);
+    expect(title).toEqual(["*rel-jk.txt*", "jump straight to a line using relative line numbers"]);
+    expect(helpSection(root, "DESCRIPTION")).toBe(
+      "With relativenumber on, every line shows how far it is from the cursor, so you can read the number and jump straight there: 5j goes down five lines and 3k up three. That's much faster than holding j or k and counting. The cursor's own line shows 0.",
+    );
+    const keys = [...root.querySelectorAll(".ag-help__keys > div")].map((row) => [
+      row.querySelector("dt.ag-key")!.textContent,
+      row.querySelector("dd")!.textContent,
+    ]);
+    expect(keys).toEqual([
+      ["<count>j", "down count lines"],
+      ["<count>k", "up count lines"],
+    ]);
+    expect(helpSection(root, "GOAL")).toBe(`Hit ${REL_JK_HITS_TO_WIN} targets as fast as you can.`);
+  });
+
+  it("a full run reaches results, where :w saves rel-jk's best time without touching the others' and starts the next run", () => {
+    localStorage.setItem("hjkl:bestTimeMs", "14320");
+    localStorage.setItem("wb:bestTimeMs", "20000");
+    const root = load();
+    run("vim rel-jk");
+    playRelJkToCompletion(root);
+    expect(screenOf(root)).toBe("screen-results");
+    expect(textOf(root, ".final-time")).toMatch(/^\d+\.\d\ds$/);
+    expect(root.querySelector(".new-best")).not.toBeNull();
+
+    press("Escape");
+    run(":w");
+    expect(Number(localStorage.getItem("rel-jk:bestTimeMs"))).toBeGreaterThanOrEqual(0);
+    expect(Object.keys(localStorage).filter((key) => key.startsWith("rel-jk:"))).toEqual(["rel-jk:bestTimeMs"]);
+    expect(localStorage.getItem("hjkl:bestTimeMs")).toBe("14320");
+    expect(localStorage.getItem("wb:bestTimeMs")).toBe("20000");
+    expect(screenOf(root)).toBe("screen-play");
+    expect(textOf(root, ".progress")).toBe(`0/${REL_JK_HITS_TO_WIN}`);
+    expect(textOf(root, ".timer")).toBe("0.00s");
+  });
+
+  it(":wq saves rel-jk's best time and returns home", () => {
+    const root = load();
+    run("vim rel-jk");
+    playRelJkToCompletion(root);
+    press("Escape");
+    run(":wq");
+    expect(screenOf(root)).toBe("home");
+    expect(localStorage.getItem("rel-jk:bestTimeMs")).not.toBeNull();
+  });
+
+  it("shows the same hints and :argot list as hjkl", () => {
+    const root = load();
+    run("vim rel-jk");
     expect(hintParts(root)).toEqual(PLAY_HINT);
     press("Escape");
     run(":argot");

@@ -141,10 +141,9 @@ export function mountApp(root: HTMLElement): void {
 
   function handleDrillKeydown(drill: RunningDrill, event: KeyboardEvent): void {
     if (drill.command === null) {
-      if (event.key !== "Escape") {
-        drill.session?.handleKey(event);
-        return;
-      }
+      // The drill sees the Esc that opens the command line too, so it can drop a half-typed count.
+      drill.session?.handleKey(event);
+      if (event.key !== "Escape") return;
       drill.command = "";
     } else if (event.key === "Escape") {
       drill.command = null;

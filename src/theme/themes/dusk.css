@@ -25,6 +25,10 @@
   /* dividers */
   --ag-rule: #3b4261;        /* the === rules between a help page's sections, and the line over a command response */
 
+  /* line numbers */
+  --ag-gutter: #565f89;      /* relative line numbers in rel-jk's gutter */
+  --ag-cursorline: #292e42;  /* the tint across the cursor's line in rel-jk */
+
   /* board */
   --ag-board-dot: #3b4261;
 

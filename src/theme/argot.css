@@ -304,6 +304,50 @@ html, body {
   text-underline-offset: 4px;
 }
 
+/* ---------- rel-jk ---------- */
+
+/* ~20 lines plus the instructions and info row stay a little apart, so the passage gets the height */
+.ag-play--tight {
+  gap: 16px;
+  /* on a narrow screen the passage scrolls in its own box rather than pushing the page wider */
+  max-width: 100%;
+}
+
+.ag-rel {
+  max-width: 100%;
+  overflow-x: auto;
+  white-space: pre;
+  /* 60 columns of text plus the gutter across, ~20 lines down: scale with
+     whichever runs out first, stopping at a readable 12px (the stage scrolls below that) */
+  font-size: clamp(12px, min(2.4vw, calc((100vh - 280px) / 31)), 19px);
+  line-height: 1.5;
+}
+.ag-rel__line { padding-right: 1ch; }
+/* vim's cursorline: a tint across the cursor's whole line */
+.ag-rel__line--cursor { background: var(--ag-cursorline); }
+/* relative numbers right-aligned and muted, as vim's 'relativenumber' draws them */
+.ag-rel__number {
+  display: inline-block;
+  width: 3ch;
+  margin-right: 2ch;
+  text-align: right;
+  color: var(--ag-gutter);
+}
+/* ...and the cursor's 0 bright, like vim's CursorLineNr */
+.ag-rel__line--cursor .ag-rel__number {
+  color: var(--ag-fg);
+  font-weight: var(--ag-weight-bold);
+}
+.ag-rel__line--target .ag-rel__number {
+  color: var(--ag-target);
+  font-weight: var(--ag-weight-bold);
+}
+.ag-rel__line--target .ag-rel__text {
+  color: var(--ag-target);
+  text-decoration: underline 2px var(--ag-target);
+  text-underline-offset: 4px;
+}
+
 /* ---------- accessibility ---------- */
 
 @media (prefers-reduced-motion: reduce) {
