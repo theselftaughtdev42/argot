@@ -1,5 +1,7 @@
 import { mountHjklDrill } from "./hjkl/app";
 import { help as hjklHelp } from "./hjkl/renderer";
+import { mountRelJkDrill } from "./rel-jk/app";
+import { help as relJkHelp } from "./rel-jk/renderer";
 import { mountWbDrill } from "./wb/app";
 import { help as wbHelp } from "./wb/renderer";
 
@@ -30,7 +32,9 @@ export interface DrillSession {
   /**
    * A key meant for the drill. The shell owns the only keydown listener and
    * forwards keys here, except Ctrl/Cmd/Alt combinations and keys typed on its
-   * command line. Drills must not listen on `window` themselves.
+   * command line. The Esc that opens the command line is forwarded too, so a
+   * drill can drop anything half-typed. Drills must not listen on `window`
+   * themselves.
    */
   handleKey(event: KeyboardEvent): void;
   /** Whether the current run has started, which the first move does. */
@@ -61,4 +65,5 @@ export interface Drill {
 export const drills = new Map<string, Drill>([
   ["hjkl", { mount: mountHjklDrill, help: hjklHelp }],
   ["wb", { mount: mountWbDrill, help: wbHelp }],
+  ["rel-jk", { mount: mountRelJkDrill, help: relJkHelp }],
 ]);
