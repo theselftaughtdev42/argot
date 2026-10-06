@@ -19,7 +19,9 @@ import {
   type FrameScreen,
   type HomeState,
   type ShellOutput,
+  type ThemePicker,
 } from "./shell/renderer";
+import { applyTheme, currentTheme, previewTheme, THEMES } from "./theme";
 
 type RunningDrill = {
   name: string;
@@ -36,7 +38,7 @@ type RunningDrill = {
 };
 
 export function mountApp(root: HTMLElement): void {
-  const home: HomeState = { input: "", last: null, compact: false };
+  const home: HomeState = { input: "", last: null, compact: false, picker: null };
   let drill: RunningDrill | null = null;
   /** Commands run at the prompt this visit, oldest first, for ArrowUp and ArrowDown to step through. */
   const history: string[] = [];
@@ -116,6 +118,34 @@ export function mountApp(root: HTMLElement): void {
     runCommandLine(running.screen, command, shell);
   }
 
+  function openThemePicker(): void {
+    const themes = Object.entries(THEMES).map(([name, { label }]) => ({ name, label }));
+    const saved = currentTheme();
+    home.picker = { themes, selected: themes.findIndex(({ name }) => name === saved), saved };
+  }
+
+  /** Browses the picker's themes, showing each as it's reached; Enter keeps the one showing, Esc goes back. */
+  function handlePickerKeydown(picker: ThemePicker, event: KeyboardEvent): void {
+    const step = event.key === "j" || event.key === "ArrowDown" ? 1 : event.key === "k" || event.key === "ArrowUp" ? -1 : 0;
+    if (step !== 0) {
+      // Arrows would otherwise scroll the page.
+      event.preventDefault();
+      const next = Math.min(Math.max(picker.selected + step, 0), picker.themes.length - 1);
+      if (next === picker.selected) return;
+      picker.selected = next;
+      previewTheme(picker.themes[next]!.name);
+    } else if (event.key === "Enter") {
+      applyTheme(picker.themes[picker.selected]!.name);
+      home.picker = null;
+    } else if (event.key === "Escape") {
+      previewTheme(picker.saved);
+      home.picker = null;
+    } else {
+      return;
+    }
+    renderHome(root, home);
+  }
+
   function runCommand(line: string): void {
     const [name, ...args] = line.split(/\s+/);
     if (!name) {
@@ -128,6 +158,7 @@ export function mountApp(root: HTMLElement): void {
       error: (text) => show({ kind: "error", text }),
       listCommands: () => show({ kind: "commands", items: listCommands(homeCommands) }),
       launchDrill,
+      pickTheme: openThemePicker,
     };
     // Cleared first so a drill launch leaves a clean home to come back to.
     home.last = null;
@@ -162,6 +193,10 @@ export function mountApp(root: HTMLElement): void {
   }
 
   function handleHomeKeydown(event: KeyboardEvent): void {
+    if (home.picker) {
+      handlePickerKeydown(home.picker, event);
+      return;
+    }
     if (event.key === "Enter") {
       const line = home.input.trim();
       // Like a shell's ignoredups: an empty line or a repeat of the last command isn't worth recalling.

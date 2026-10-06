@@ -125,5 +125,9 @@ How many lines a line is from the cursor's line.
 ## Look
 
 **Theme**:
-A named look for argot (colours and font), such as Dusk.
+A named look for argot (colours and font), such as Dusk or Synth. The visitor's choice is saved in the browser and comes back on the next visit.
 _Avoid_: Colorscheme, skin
+
+**Theme picker**:
+The list of themes that `theme` opens over a dimmed home, with the selected theme (the one saved for this browser) marked. j and k (or ↓ and ↑) move through it, showing each theme as it's reached; Enter makes the one showing the selected theme and Esc goes back to the selected theme without changing it.
+_Avoid_: Theme menu, settings

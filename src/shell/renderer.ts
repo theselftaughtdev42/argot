@@ -10,6 +10,15 @@ export type CommandResponse =
 
 export type ShellOutput = { kind: "list"; items: string[] } | CommandResponse;
 
+/** The theme picker open over home: every theme, which one is showing, and which one is saved. */
+export type ThemePicker = {
+  themes: { name: string; label: string }[];
+  /** Index into `themes` of the theme being previewed. */
+  selected: number;
+  /** The theme that was saved when the picker opened, which Esc goes back to. */
+  saved: string;
+};
+
 export type HomeState = {
   /** What's typed at the prompt. */
   input: string;
@@ -17,11 +26,15 @@ export type HomeState = {
   last: { name: string; output: ShellOutput } | null;
   /** Whether the logo has shrunk to the top of the page, leaving the tagline behind. */
   compact: boolean;
+  /** The theme picker, while it's open over home. */
+  picker: ThemePicker | null;
 };
 
 function escapeHtml(text: string): string {
   return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
+
+const key = (text: string) => `<span class="ag-key">${text}</span>`;
 
 /** `argot`'s list: each command's usage, highlighted, beside what it does. */
 function renderCommandList(items: { usage: string; description: string }[]): string {
@@ -37,7 +50,28 @@ function renderOutput(output: ShellOutput): string {
   return `<ul class="ag-ls">${output.items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
 }
 
-export function renderHome(root: HTMLElement, { input, last, compact }: HomeState): void {
+/** The theme picker: a list over the dimmed home, the previewed theme marked, the selected one noted. */
+function renderThemePicker({ themes, selected, saved }: ThemePicker): string {
+  const options = themes
+    .map(
+      ({ name, label }, index) => `
+        <li class="ag-picker__option${index === selected ? " ag-picker__option--selected" : ""}" data-theme-name="${escapeHtml(name)}">
+          <span>${escapeHtml(label)}</span>${name === saved ? `<span class="ag-muted">selected</span>` : ""}
+        </li>`,
+    )
+    .join("");
+  return `
+    <div class="ag-picker theme-picker">
+      <ul class="ag-picker__list">${options}</ul>
+      <div class="ag-hint ag-picker__hint">
+        <span>${key("enter")} to save</span>
+        <span>${key("esc")} to cancel</span>
+      </div>
+    </div>
+  `;
+}
+
+export function renderHome(root: HTMLElement, { input, last, compact, picker }: HomeState): void {
   const hint =
     last?.name === "ls"
       ? `type <span class="ag-key">vim</span> and a drill name`
@@ -51,7 +85,7 @@ export function renderHome(root: HTMLElement, { input, last, compact }: HomeStat
     </header>
   `;
   root.innerHTML = `
-    <main class="ag-screen ag-home${compact ? " ag-home--compact" : ""}">
+    <main class="ag-screen ag-home${compact ? " ag-home--compact" : ""}${picker ? " home-dimmed" : ""}">
       ${compact ? brand : ""}
       <div class="ag-stack${compact ? "" : " ag-stack--narrow"}">
         ${compact ? "" : brand}
@@ -62,6 +96,7 @@ export function renderHome(root: HTMLElement, { input, last, compact }: HomeStat
         </div>
       </div>
     </main>
+    ${picker ? renderThemePicker(picker) : ""}
   `;
 }
 
@@ -97,8 +132,6 @@ export function renderDrillFrame(
 export function renderStatusName(statusName: HTMLElement, name: string, screen: FrameScreen): void {
   statusName.textContent = screen === "help" ? `${name}.txt [Help][RO]` : name;
 }
-
-const key = (text: string) => `<span class="ag-key">${text}</span>`;
 
 /**
  * The command line under a running drill: what's typed, with the cursor, while

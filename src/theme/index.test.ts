@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { applyTheme, DEFAULT_THEME, initTheme, listThemes, THEMES } from ".";
+import { applyTheme, currentTheme, DEFAULT_THEME, initTheme, listThemes, previewTheme, THEMES } from ".";
 
 function appliedTheme(): string | undefined {
   return document.documentElement.dataset.theme;
@@ -83,6 +83,25 @@ describe("theme registry", () => {
     expect(appliedTheme()).toBe(DEFAULT_THEME);
     expect(applyTheme("dusk")).toBe(true);
     expect(appliedTheme()).toBe("dusk");
+  });
+
+  it("previews a theme without saving it", () => {
+    applyTheme("dusk");
+    expect(previewTheme("synth")).toBe(true);
+    expect(appliedTheme()).toBe("synth");
+    expect(currentTheme()).toBe("synth");
+    expect(localStorage.getItem("argot:theme")).toBe("dusk");
+  });
+
+  it("refuses to preview an unknown theme", () => {
+    applyTheme("dusk");
+    expect(previewTheme("solarized")).toBe(false);
+    expect(appliedTheme()).toBe("dusk");
+  });
+
+  it("reports the default as current when the shown theme isn't registered", () => {
+    document.documentElement.dataset.theme = "solarized";
+    expect(currentTheme()).toBe(DEFAULT_THEME);
   });
 
   it("loads the theme's font when it's applied", () => {

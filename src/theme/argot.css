@@ -46,11 +46,12 @@ html, body {
   line-height: 1;
   font-weight: var(--ag-weight-bold);
   letter-spacing: -0.02em;
-  color: var(--ag-fg);
+  color: var(--ag-logo-fg);
+  text-shadow: var(--ag-glow);
 }
 .ag-logo::before {
   content: ":";
-  color: var(--ag-highlight);
+  color: var(--ag-logo-colon);
 }
 .ag-tagline { color: var(--ag-fg-muted); margin-top: 10px; }
 
@@ -76,6 +77,7 @@ html, body {
   content: var(--ag-prompt-symbol);
   color: var(--ag-prompt);
   font-weight: var(--ag-weight-bold);
+  text-shadow: var(--ag-glow);
 }
 
 .ag-cursor {
@@ -84,6 +86,7 @@ html, body {
   height: 1.2em;
   vertical-align: text-bottom;
   background: var(--ag-cursor);
+  box-shadow: var(--ag-cursor-glow);
   animation: ag-blink 1s steps(1) infinite;
 }
 .ag-cursor--still { animation: none; }
@@ -111,6 +114,7 @@ html, body {
   list-style: none;
   color: var(--ag-accent);
   font-weight: var(--ag-weight-bold);
+  text-shadow: var(--ag-glow);
 }
 
 /* ---------- home ---------- */
@@ -121,6 +125,48 @@ html, body {
   gap: 28px;
 }
 .ag-home--compact .ag-stack { margin-block: auto; }
+
+/* while the theme picker is open, home steps back a little: less than a greyed
+   drill, so the theme being previewed still shows on it */
+.ag-home { transition: opacity 0.15s; }
+.home-dimmed { opacity: 0.6; }
+.home-dimmed .ag-cursor { animation: none; }
+
+/* ---------- theme picker ---------- */
+
+.ag-picker {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(360px, calc(100vw - 32px));
+  padding: 16px 0 12px;
+  background: var(--ag-bg);
+  border: 1px solid var(--ag-rule);
+  font-size: 20px;
+  line-height: 1.7;
+  text-shadow: var(--ag-text-glow);
+}
+.ag-picker__list { margin: 0; padding: 0; list-style: none; }
+.ag-picker__option {
+  display: flex;
+  justify-content: space-between;
+  gap: 2ch;
+  padding: 0 20px;
+}
+/* the previewed theme sits on a cursorline, like the line under vim's cursor */
+.ag-picker__option--selected {
+  background: var(--ag-cursorline);
+  color: var(--ag-accent);
+  font-weight: var(--ag-weight-bold);
+}
+.ag-picker__hint {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 2ch;
+  padding: 0 20px;
+  font-size: 15px;
+}
 
 /* ---------- drill ---------- */
 
@@ -154,8 +200,12 @@ html, body {
   line-height: 1.6;
   color: var(--ag-board-dot);
 }
-.ag-board__cursor { background: var(--ag-accent); }
-.ag-board__target { color: var(--ag-target); font-weight: var(--ag-weight-bold); }
+.ag-board__cursor { background: var(--ag-accent); box-shadow: var(--ag-cursor-glow); }
+.ag-board__target {
+  color: var(--ag-target);
+  font-weight: var(--ag-weight-bold);
+  text-shadow: var(--ag-glow);
+}
 
 /* the statusline and command line; a multi-line command response grows up from here */
 .ag-drill__foot { position: relative; }
@@ -353,4 +403,5 @@ html, body {
 @media (prefers-reduced-motion: reduce) {
   .ag-cursor,
   .ag-passage__cursor { animation: none; }
+  .ag-home { transition: none; }
 }

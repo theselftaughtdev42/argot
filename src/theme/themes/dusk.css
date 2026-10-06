@@ -19,6 +19,14 @@
   --ag-target-tint: #b07d93; /* the rest of the target word in a passage */
   --ag-error: #f7768e;       /* shell and command-line errors */
 
+  /* logo */
+  --ag-logo-fg: #c0caf5;
+  --ag-logo-colon: #e0af68;
+
+  /* neon */
+  --ag-glow: none;           /* on the logo, ls, the prompt and board pieces */
+  --ag-cursor-glow: none;
+
   /* cursor */
   --ag-cursor: #c0caf5;
 
