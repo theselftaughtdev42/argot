@@ -70,11 +70,11 @@ function textOf(root: HTMLElement, selector: string): string | undefined {
 /** The command-line hint on the play screen while the line is closed. */
 const PLAY_HINT = ["Esc then", ":help for instructions", ":argot for more"];
 
-/** The command-line hint on the results screen while the line is closed. */
-const RESULTS_HINT = ["Esc then", ":w save & retry", ":wq save & quit", ":argot for more"];
+/** The command-line hint on the results screen, where the line is always open. */
+const RESULTS_HINT = [":w save & retry", ":wq save & quit", ":argot for more"];
 
-/** The command-line hint on the help page while the line is closed. */
-const HELP_HINT = ["Esc then", ":q back to the drill", ":argot for more"];
+/** The command-line hint on the help page, where the line is always open. */
+const HELP_HINT = [":q back to the drill", ":argot for more"];
 
 /** What :q says on play once the run has started. */
 const PLAY_E37 = "E37: run in progress (add ! to abandon it: :q!)";
@@ -514,34 +514,43 @@ describe("help page", () => {
     expect(textOf(root, ".statusline-drill")).toBe("hjkl");
   });
 
-  it("closes the command line and hints at Esc then :q back to the drill or :argot", () => {
+  it("opens with the command line open and ungreyed, hinting at :q back to the drill or :argot", () => {
     const root = load();
     run("vim hjkl");
     openHelp();
-    expect(root.querySelector(".cmdline-input")).toBeNull();
-    expect(hintParts(root)).toEqual(HELP_HINT);
-    expect(hintKeys(root)).toEqual(["Esc", ":q", ":argot"]);
-  });
-
-  it("with the command line open, greys the page and hints at :q and :argot", () => {
-    const root = load();
-    run("vim hjkl");
-    openHelp();
-    press("Escape");
-    expect(root.querySelector(".drill-greyed .screen-help")).not.toBeNull();
-    expect(hintParts(root)).toEqual([":q back to the drill", ":argot for more"]);
-    expect(hintKeys(root)).toEqual([":q", ":argot"]);
-    press("Escape");
+    expect(textOf(root, ".cmdline-input")).toBe("");
+    expect(root.querySelector(".cmdline-input + .ag-cursor")).not.toBeNull();
     expect(root.querySelector(".drill-greyed")).toBeNull();
+    expect(hintParts(root)).toEqual(HELP_HINT);
+    expect(hintKeys(root)).toEqual([":q", ":argot"]);
   });
 
-  it("ignores hjkl, Enter and a bare q", () => {
+  it("takes : straight away, without Esc first", () => {
     const root = load();
     run("vim hjkl");
     openHelp();
-    for (const key of ["h", "j", "k", "l", "Enter", "q"]) press(key);
+    run(":q");
+    expect(screenOf(root)).toBe("screen-play");
+  });
+
+  it("Esc discards what's typed but keeps the command line open", () => {
+    const root = load();
+    run("vim hjkl");
+    openHelp();
+    type(":x");
+    press("Escape");
+    expect(textOf(root, ".cmdline-input")).toBe("");
+    expect(hintParts(root)).toEqual(HELP_HINT);
     expect(screenOf(root)).toBe("screen-help");
-    expect(root.querySelector(".cmdline-input")).toBeNull();
+  });
+
+  it("types hjkl and a bare q onto the command line instead of acting on them", () => {
+    const root = load();
+    run("vim hjkl");
+    openHelp();
+    for (const key of ["h", "j", "k", "l", "q"]) press(key);
+    expect(screenOf(root)).toBe("screen-help");
+    expect(textOf(root, ".cmdline-input")).toBe("hjklq");
   });
 
   it(":q goes back to a fresh play screen with the timer at zero", () => {
@@ -740,21 +749,11 @@ describe("drill frame", () => {
     expect(hintKeys(root)).toEqual([":help", ":argot"]);
   });
 
-  it("on results with the command line closed, hints at Esc then :w, :wq or :argot", () => {
+  it("on results, where the command line is always open, hints at :w, :wq and :argot", () => {
     const root = load();
     run("vim hjkl");
     playToCompletion(root);
     expect(hintParts(root)).toEqual(RESULTS_HINT);
-    expect(hintKeys(root)).toEqual(["Esc", ":w", ":wq", ":argot"]);
-    expect(root.querySelector(".ag-cmdline .ag-cursor")).toBeNull();
-  });
-
-  it("on results with the command line open, hints at :w, :wq and :argot", () => {
-    const root = load();
-    run("vim hjkl");
-    playToCompletion(root);
-    press("Escape");
-    expect(hintParts(root)).toEqual([":w save & retry", ":wq save & quit", ":argot for more"]);
     expect(hintKeys(root)).toEqual([":w", ":wq", ":argot"]);
     expect(root.querySelector(".cmdline-input + .ag-cursor")).not.toBeNull();
   });
@@ -937,38 +936,31 @@ describe("command mode on the play screen", () => {
 });
 
 describe("hjkl results", () => {
-  it("shows the final time and new best with the command line closed, and no buttons", () => {
+  it("shows the final time and new best with the command line already open, and no buttons", () => {
     const root = load();
     run("vim hjkl");
     playToCompletion(root);
     expect(screenOf(root)).toBe("screen-results");
     expect(textOf(root, ".final-time")).toMatch(/^\d+\.\d\ds$/);
     expect(root.querySelector(".new-best")).not.toBeNull();
-    expect(root.querySelector(".cmdline-input")).toBeNull();
+    expect(textOf(root, ".cmdline-input")).toBe("");
     expect(root.querySelector("button")).toBeNull();
   });
 
-  it("needs Esc before a command, like vim: typing first does nothing", () => {
+  it("takes : straight away, without Esc first", () => {
     const root = load();
     run("vim hjkl");
     playToCompletion(root);
     run(":wq");
-    expect(screenOf(root)).toBe("screen-results");
-    expect(root.querySelector(".cmdline-input")).toBeNull();
-    expect(localStorage.getItem("hjkl:bestTimeMs")).toBeNull();
-
-    press("Escape");
-    expect(textOf(root, ".cmdline-input")).toBe("");
-    type(":w");
-    expect(textOf(root, ".cmdline-input")).toBe(":w");
+    expect(screenOf(root)).toBe("home");
+    expect(localStorage.getItem("hjkl:bestTimeMs")).not.toBeNull();
   });
 
-  it("greys results while the command line is open", () => {
+  it("doesn't grey results, since the command line is always open", () => {
     const root = load();
     run("vim hjkl");
     playToCompletion(root);
-    press("Escape");
-    expect(root.querySelector(".drill-greyed .screen-results")).not.toBeNull();
+    expect(root.querySelector(".drill-greyed")).toBeNull();
     press("Escape");
     expect(root.querySelector(".drill-greyed")).toBeNull();
   });
@@ -1064,19 +1056,16 @@ describe("hjkl results", () => {
     expect(screenOf(root)).toBe("screen-results");
   });
 
-  it("Esc closes the command line, discarding what's typed, and Esc opens it again empty", () => {
+  it("Esc discards what's typed but keeps the command line open, so the player can still leave", () => {
     const root = load();
     run("vim hjkl");
     playToCompletion(root);
-    press("Escape");
     type(":x");
     press("Escape");
-    expect(root.querySelector(".cmdline-input")).toBeNull();
+    expect(textOf(root, ".cmdline-input")).toBe("");
     expect(hintParts(root)).toEqual(RESULTS_HINT);
     expect(screenOf(root)).toBe("screen-results");
 
-    press("Escape");
-    expect(textOf(root, ".cmdline-input")).toBe("");
     run(":q!");
     expect(screenOf(root)).toBe("home");
   });

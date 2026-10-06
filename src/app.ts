@@ -37,6 +37,11 @@ type RunningDrill = {
   response: CommandResponse | null;
 };
 
+/** Help and results have nothing to play, so their command line is always open, ready for `:`. */
+function isReadOnly(screen: FrameScreen): boolean {
+  return screen !== "play";
+}
+
 export function mountApp(root: HTMLElement): void {
   const home: HomeState = { input: "", last: null, compact: false, picker: null };
   let drill: RunningDrill | null = null;
@@ -49,8 +54,8 @@ export function mountApp(root: HTMLElement): void {
 
   function renderDrill(): void {
     if (!drill) return;
-    // Greying pulls attention from the stage to the command line.
-    drill.container.classList.toggle("drill-greyed", drill.command !== null);
+    // Greying pulls attention from the stage to the command line, which only matters while there's play to pull from.
+    drill.container.classList.toggle("drill-greyed", drill.command !== null && !isReadOnly(drill.screen));
     renderStatusName(drill.statusName, drill.name, drill.screen);
     renderCommandLine(drill.cmdline, drill.screen, drill.command, drill.response);
   }
@@ -62,6 +67,7 @@ export function mountApp(root: HTMLElement): void {
     running.response = null;
     running.session = drills.get(running.name)!.mount(running.container, (screen) => {
       running.screen = screen;
+      if (isReadOnly(screen)) running.command = "";
       renderDrill();
     });
   }
@@ -71,7 +77,7 @@ export function mountApp(root: HTMLElement): void {
     running.session?.destroy();
     running.session = null;
     running.screen = "help";
-    running.command = null;
+    running.command = "";
     running.response = null;
     renderHelp(running.container, drills.get(running.name)!.help);
     renderDrill();
@@ -180,7 +186,8 @@ export function mountApp(root: HTMLElement): void {
       if (event.key !== "Escape") return;
       drill.command = "";
     } else if (event.key === "Escape") {
-      drill.command = null;
+      // A read-only screen has nothing to go back to, so Esc only clears the line.
+      drill.command = isReadOnly(drill.screen) ? "" : null;
       drill.response = null;
     } else if (event.key === "Enter") {
       if (drill.command !== "") runDrillCommand(drill, drill.command);

@@ -55,7 +55,7 @@ The bar under the stage showing the mode and the drill's name.
 _Avoid_: Status bar
 
 **Command line**:
-The line under the statusline that opens with Esc, where the player types `:help`, `:q`, `:q!`, `:w`, `:wq` or `argot`. While it's open, the stage is greyed. `:q` only quits when there's nothing to lose (before the first move, or from the help page); otherwise it shows an E37 error naming `:q!` or `:wq`.
+The line under the statusline where the player types `:help`, `:q`, `:q!`, `:w`, `:wq` or `argot`. On the play screen it opens with Esc and greys the stage while it's open; the help page and results screen have nothing to play, so it's always open there, ungreyed, and Esc only clears what's typed. `:q` only quits when there's nothing to lose (before the first move, or from the help page); otherwise it shows an E37 error naming `:q!` or `:wq`.
 _Avoid_: Prompt (that's home's), cmdline
 
 **Help page**:
