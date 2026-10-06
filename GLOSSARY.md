@@ -129,5 +129,5 @@ A named look for argot (colours and font), such as Dusk, Paper or Synth. The vis
 _Avoid_: Colorscheme, skin
 
 **Theme picker**:
-The list of themes that `theme` opens over a dimmed home, with the selected theme (the one saved for this browser) marked. j and k (or ↓ and ↑) move through it, showing each theme as it's reached; Enter makes the one showing the selected theme and Esc goes back to the selected theme without changing it.
+The list of themes that `theme` opens over a dimmed home, grouped dark then light, with the selected theme (the one saved for this browser) marked. j and k (or ↓ and ↑) move through it, showing each theme as it's reached; Enter makes the one showing the selected theme and Esc goes back to the selected theme without changing it.
 _Avoid_: Theme menu, settings

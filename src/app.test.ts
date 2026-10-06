@@ -1170,11 +1170,24 @@ describe("theme picker", () => {
   it("opens over a dimmed home, listing every theme with the one showing highlighted and marked selected", () => {
     const root = load();
     run("theme");
-    expect(options(root)).toEqual(["Dusk", "Paper", "Synth"]);
+    expect(options(root)).toEqual(["Dusk", "Synth", "Paper"]);
     expect(selected(root)).toBe("Dusk");
     expect(textOf(root, ".ag-picker__option--selected .ag-muted")).toBe("selected");
     expect(root.querySelector(".ag-home.home-dimmed")).not.toBeNull();
     expect(screenOf(root)).toBe("home");
+  });
+
+  it("groups the themes under dark, then light", () => {
+    const root = load();
+    run("theme");
+    const groups = [...root.querySelectorAll(".ag-picker__group")].map((group) => ({
+      heading: group.querySelector(".ag-picker__heading")!.textContent,
+      themes: [...group.querySelectorAll(".ag-picker__option > :first-child")].map((label) => label.textContent),
+    }));
+    expect(groups).toEqual([
+      { heading: "dark", themes: ["Dusk", "Synth"] },
+      { heading: "light", themes: ["Paper"] },
+    ]);
   });
 
   it.each([
@@ -1184,13 +1197,13 @@ describe("theme picker", () => {
     const root = load();
     run("theme");
     press(down);
-    expect(selected(root)).toBe("Paper");
-    expect(appliedTheme()).toBe("paper");
-    press(down);
     expect(selected(root)).toBe("Synth");
     expect(appliedTheme()).toBe("synth");
     press(down);
-    expect(selected(root)).toBe("Synth");
+    expect(selected(root)).toBe("Paper");
+    expect(appliedTheme()).toBe("paper");
+    press(down);
+    expect(selected(root)).toBe("Paper");
     press(up);
     press(up);
     expect(selected(root)).toBe("Dusk");
@@ -1213,8 +1226,8 @@ describe("theme picker", () => {
     run("theme");
     press("j");
     press("Enter");
-    expect(appliedTheme()).toBe("paper");
-    expect(localStorage.getItem("argot:theme")).toBe("paper");
+    expect(appliedTheme()).toBe("synth");
+    expect(localStorage.getItem("argot:theme")).toBe("synth");
     expect(root.querySelector(".ag-picker, .home-dimmed")).toBeNull();
   });
 
@@ -1234,7 +1247,7 @@ describe("theme picker", () => {
     press("j");
     press("Enter");
     run("theme");
-    expect(selected(root)).toBe("Paper");
+    expect(selected(root)).toBe("Synth");
     expect(textOf(root, ".ag-picker__option--selected .ag-muted")).toBe("selected");
   });
 

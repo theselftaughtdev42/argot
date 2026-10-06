@@ -21,7 +21,7 @@ import {
   type ShellOutput,
   type ThemePicker,
 } from "./shell/renderer";
-import { applyTheme, currentTheme, previewTheme, THEMES } from "./theme";
+import { applyTheme, currentTheme, previewTheme, SCHEMES, THEMES } from "./theme";
 
 type RunningDrill = {
   name: string;
@@ -119,7 +119,10 @@ export function mountApp(root: HTMLElement): void {
   }
 
   function openThemePicker(): void {
-    const themes = Object.entries(THEMES).map(([name, { label }]) => ({ name, label }));
+    // Grouped by scheme so j/k walks the picker top to bottom.
+    const themes = Object.entries(THEMES)
+      .map(([name, { label, scheme }]) => ({ name, label, scheme }))
+      .sort((a, b) => SCHEMES.indexOf(a.scheme) - SCHEMES.indexOf(b.scheme));
     const saved = currentTheme();
     home.picker = { themes, selected: themes.findIndex(({ name }) => name === saved), saved };
   }

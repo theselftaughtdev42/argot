@@ -42,7 +42,7 @@ describe("theme registry", () => {
   });
 
   it("restores a saved theme", () => {
-    THEMES.night = { label: "Night" };
+    THEMES.night = { label: "Night", scheme: "dark" };
     try {
       localStorage.setItem("argot:theme", "night");
       initTheme();

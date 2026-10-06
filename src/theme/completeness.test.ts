@@ -35,5 +35,9 @@ describe("theme completeness", () => {
       const defined = tokensDefined(css ?? "");
       expect([...used].filter((token) => !defined.has(token))).toEqual([]);
     });
+
+    it("declares the color scheme its token file sets", () => {
+      expect(css).toMatch(new RegExp(`--ag-color-scheme:\\s*${THEMES[name].scheme};`));
+    });
   });
 });

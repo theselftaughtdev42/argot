@@ -1,4 +1,5 @@
 import type { DrillScreen, Help } from "../drills/registry";
+import type { Scheme } from "../theme";
 
 /** What the drill frame can show in its stage: the drill's own screens, or the shell's help page. */
 export type FrameScreen = DrillScreen | "help";
@@ -12,7 +13,8 @@ export type ShellOutput = { kind: "list"; items: string[] } | CommandResponse;
 
 /** The theme picker open over home: every theme, which one is showing, and which one is saved. */
 export type ThemePicker = {
-  themes: { name: string; label: string }[];
+  /** Every theme, those of a scheme together, in the order the picker shows them. */
+  themes: { name: string; label: string; scheme: Scheme }[];
   /** Index into `themes` of the theme being previewed. */
   selected: number;
   /** The theme that was saved when the picker opened, which Esc goes back to. */
@@ -50,19 +52,28 @@ function renderOutput(output: ShellOutput): string {
   return `<ul class="ag-ls">${output.items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
 }
 
-/** The theme picker: a list over the dimmed home, the previewed theme marked, the selected one noted. */
+/** The theme picker: a list per scheme over the dimmed home, the previewed theme marked, the selected one noted. */
 function renderThemePicker({ themes, selected, saved }: ThemePicker): string {
-  const options = themes
-    .map(
-      ({ name, label }, index) => `
-        <li class="ag-picker__option${index === selected ? " ag-picker__option--selected" : ""}" data-theme-name="${escapeHtml(name)}">
-          <span>${escapeHtml(label)}</span>${name === saved ? `<span class="ag-muted">selected</span>` : ""}
-        </li>`,
-    )
+  const option = ({ name, label }: ThemePicker["themes"][number], index: number) => `
+    <li class="ag-picker__option${index === selected ? " ag-picker__option--selected" : ""}" data-theme-name="${escapeHtml(name)}">
+      <span>${escapeHtml(label)}</span>${name === saved ? `<span class="ag-muted">selected</span>` : ""}
+    </li>`;
+  const schemes = [...new Set(themes.map(({ scheme }) => scheme))];
+  const groups = schemes
+    .map((scheme) => {
+      const options = themes
+        .map((theme, index) => (theme.scheme === scheme ? option(theme, index) : ""))
+        .join("");
+      return `
+        <section class="ag-picker__group" data-scheme="${scheme}">
+          <h2 class="ag-picker__heading ag-muted">${scheme}</h2>
+          <ul class="ag-picker__list">${options}</ul>
+        </section>`;
+    })
     .join("");
   return `
     <div class="ag-picker theme-picker">
-      <ul class="ag-picker__list">${options}</ul>
+      ${groups}
       <div class="ag-hint ag-picker__hint">
         <span>${key("enter")} to save</span>
         <span>${key("esc")} to cancel</span>
