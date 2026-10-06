@@ -1109,10 +1109,11 @@ describe("argot at home", () => {
   const HOME_COMMANDS = [
     ["ls", "list drills"],
     ["vim <drill>", "start a drill"],
+    ["theme", "choose a theme"],
     ["argot", "list the commands you can use here"],
   ];
 
-  it.each(["argot", ":argot"])("%s lists ls, vim <drill> and argot, with what each does", (command) => {
+  it.each(["argot", ":argot"])("%s lists ls, vim <drill>, theme and argot, with what each does", (command) => {
     const root = load();
     run(command);
     expect(commandList(root, ".ag-home")).toEqual(HOME_COMMANDS);
@@ -1146,6 +1147,115 @@ describe("argot at home", () => {
     run("ls");
     expect(root.querySelector(".ag-commands")).toBeNull();
     expect(root.querySelector(".ag-ls")).not.toBeNull();
+  });
+});
+
+describe("theme picker", () => {
+  function appliedTheme(): string | undefined {
+    return document.documentElement.dataset.theme;
+  }
+
+  function options(root: HTMLElement): string[] {
+    return [...root.querySelectorAll(".ag-picker__option > :first-child")].map((label) => label.textContent!);
+  }
+
+  function selected(root: HTMLElement): string | undefined {
+    return textOf(root, ".ag-picker__option--selected > :first-child");
+  }
+
+  beforeEach(() => {
+    document.documentElement.dataset.theme = "dusk";
+  });
+
+  it("opens over a dimmed home, listing every theme with the one showing highlighted and marked selected", () => {
+    const root = load();
+    run("theme");
+    expect(options(root)).toEqual(["Dusk", "Synth"]);
+    expect(selected(root)).toBe("Dusk");
+    expect(textOf(root, ".ag-picker__option--selected .ag-muted")).toBe("selected");
+    expect(root.querySelector(".ag-home.home-dimmed")).not.toBeNull();
+    expect(screenOf(root)).toBe("home");
+  });
+
+  it.each([
+    ["j", "k"],
+    ["ArrowDown", "ArrowUp"],
+  ])("%s and %s step through the themes, showing each as it's reached, without saving", (down, up) => {
+    const root = load();
+    run("theme");
+    press(down);
+    expect(selected(root)).toBe("Synth");
+    expect(appliedTheme()).toBe("synth");
+    press(down);
+    expect(selected(root)).toBe("Synth");
+    press(up);
+    expect(selected(root)).toBe("Dusk");
+    expect(appliedTheme()).toBe("dusk");
+    press(up);
+    expect(selected(root)).toBe("Dusk");
+    expect(localStorage.getItem("argot:theme")).toBeNull();
+  });
+
+  it("keeps the arrows from scrolling the page", () => {
+    load();
+    run("theme");
+    const event = new KeyboardEvent("keydown", { key: "ArrowDown", cancelable: true });
+    window.dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(true);
+  });
+
+  it("Enter saves the theme showing and closes the picker", () => {
+    const root = load();
+    run("theme");
+    press("j");
+    press("Enter");
+    expect(appliedTheme()).toBe("synth");
+    expect(localStorage.getItem("argot:theme")).toBe("synth");
+    expect(root.querySelector(".ag-picker, .home-dimmed")).toBeNull();
+  });
+
+  it("Esc puts the saved theme back and closes the picker without saving", () => {
+    const root = load();
+    run("theme");
+    press("j");
+    press("Escape");
+    expect(appliedTheme()).toBe("dusk");
+    expect(localStorage.getItem("argot:theme")).toBeNull();
+    expect(root.querySelector(".ag-picker, .home-dimmed")).toBeNull();
+  });
+
+  it("opens on the selected theme, marked as selected", () => {
+    const root = load();
+    run("theme");
+    press("j");
+    press("Enter");
+    run("theme");
+    expect(selected(root)).toBe("Synth");
+    expect(textOf(root, ".ag-picker__option--selected .ag-muted")).toBe("selected");
+  });
+
+  it("doesn't type at the prompt while it's open", () => {
+    const root = load();
+    run("theme");
+    type("ls");
+    press("Escape");
+    expect(textOf(root, ".prompt-input")).toBe("");
+    expect(root.querySelector(".ag-ls")).toBeNull();
+  });
+
+  it("isn't recalled into the prompt by ArrowUp while open, but theme is in history after", () => {
+    const root = load();
+    run("theme");
+    press("Escape");
+    press("ArrowUp");
+    expect(textOf(root, ".prompt-input")).toBe("theme");
+  });
+
+  it("theme with an argument is an error, and opens nothing", () => {
+    const root = load();
+    run("theme synth");
+    expect(textOf(root, ".ag-error")).toBe("theme: too many arguments (type argot for commands)");
+    expect(root.querySelector(".ag-picker")).toBeNull();
   });
 });
 

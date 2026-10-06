@@ -7,6 +7,13 @@
     <link rel="icon" type="image/svg+xml" href="/argot-icon.svg" />
     <title>argot — train your fingers to think in vim</title>
     <meta name="description" content="train your fingers to think in vim." />
+    <script>
+      // Paint the saved theme from the start; initTheme checks it once the app loads.
+      try {
+        const saved = localStorage.getItem("argot:theme");
+        if (saved) document.documentElement.dataset.theme = saved;
+      } catch {}
+    </script>
   </head>
   <body>
     <div id="app"></div>

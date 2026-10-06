@@ -1,6 +1,7 @@
 // Every theme's tokens load up front (they're only custom properties), then
 // the components that read them.
 import "./themes/dusk.css";
+import "./themes/synth.css";
 import "./argot.css";
 
 /** A theme: a token file at `themes/<name>.css` plus an entry in `THEMES`. */
@@ -20,6 +21,11 @@ export const THEMES: Record<string, ThemeDefinition> = {
         import("@fontsource/jetbrains-mono/700.css"),
       ]),
   },
+  synth: {
+    label: "Synth",
+    loadFont: () =>
+      Promise.all([import("@fontsource/space-mono/400.css"), import("@fontsource/space-mono/700.css")]),
+  },
 };
 
 export const DEFAULT_THEME = "dusk";
@@ -33,12 +39,24 @@ function isTheme(name: string): boolean {
   return Object.hasOwn(THEMES, name);
 }
 
-/** Applies a theme by name and remembers it. Returns false, changing nothing, if there's no such theme. */
-export function applyTheme(name: string): boolean {
+/** The theme showing now. */
+export function currentTheme(): string {
+  const shown = document.documentElement.dataset.theme;
+  return shown !== undefined && isTheme(shown) ? shown : DEFAULT_THEME;
+}
+
+/** Shows a theme by name without remembering it, as the picker does while browsing. Returns false, changing nothing, if there's no such theme. */
+export function previewTheme(name: string): boolean {
   if (!isTheme(name)) return false;
   // A font that fails to load leaves the token's fallback stack in place.
   THEMES[name].loadFont?.().catch(() => {});
   document.documentElement.dataset.theme = name;
+  return true;
+}
+
+/** Applies a theme by name and remembers it. Returns false, changing nothing, if there's no such theme. */
+export function applyTheme(name: string): boolean {
+  if (!previewTheme(name)) return false;
   try {
     localStorage.setItem(STORAGE_KEY, name);
   } catch {

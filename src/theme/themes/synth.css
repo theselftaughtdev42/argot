@@ -1,0 +1,51 @@
+/* Synth — neon pink and cyan.
+   Only tokens live here. Components live in ../argot.css and read these tokens only. */
+[data-theme="synth"] {
+  /* type */
+  --ag-font-mono: "Space Mono", ui-monospace, monospace;
+  --ag-weight-bold: 700;
+
+  /* surfaces + text */
+  --ag-bg: #160b22;
+  --ag-fg: #f2e9ff;
+  --ag-fg-muted: #9b88b8;
+  --ag-text-glow: none;      /* body text stays crisp; accents glow via --ag-glow */
+
+  /* accents */
+  --ag-accent: #4fe3f0;      /* cyan: drill names, cursor */
+  --ag-highlight: #4fe3f0;   /* cyan: keys/commands in hints */
+  --ag-prompt: #ff5fb4;      /* pink: shell prompt symbol */
+  --ag-target: #ff5fb4;      /* pink: target on the board, and the target word's landing character */
+  --ag-target-tint: #c77bb0; /* the rest of the target word in a passage */
+  --ag-error: #ff6b6b;       /* shell and command-line errors: red, so it isn't mistaken for a target */
+
+  /* logo */
+  --ag-logo-fg: #ff5fb4;
+  --ag-logo-colon: #4fe3f0;
+
+  /* neon */
+  --ag-glow: 0 0 10px currentColor;                    /* on the logo, ls, the prompt and board pieces */
+  --ag-cursor-glow: 0 0 10px rgba(79, 227, 240, 0.7);
+
+  /* cursor */
+  --ag-cursor: #4fe3f0;
+
+  /* dividers */
+  --ag-rule: #3d2a57;        /* the === rules between a help page's sections, and the line over a command response */
+
+  /* line numbers */
+  --ag-gutter: #6b5a8a;      /* relative line numbers in rel-jk's gutter */
+  --ag-cursorline: #261538;  /* the tint across the cursor's line in rel-jk */
+
+  /* board */
+  --ag-board-dot: #3d2a57;
+
+  /* vim statusline */
+  --ag-statusline-bg: #2a1740;
+  --ag-statusline-fg: #f2e9ff;
+  --ag-mode-bg: #ff5fb4;
+  --ag-mode-fg: #160b22;
+
+  /* glyphs */
+  --ag-prompt-symbol: "» ";
+}

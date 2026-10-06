@@ -15,6 +15,8 @@ export interface Shell extends Responder {
   list(items: string[]): void;
   /** Leaves home for the drill called `name`, which must be in the registry. */
   launchDrill(name: string): void;
+  /** Opens the theme picker over home. */
+  pickTheme(): void;
 }
 
 /** What a command-line command can do to the running drill. */
@@ -95,6 +97,17 @@ export const homeCommands: CommandTable<Shell> = new Map<string, Command<Shell>>
         if (!name) shell.error("vim: missing drill name");
         else if (drills.has(name)) shell.launchDrill(name);
         else shell.error(`vim: no such drill: ${name}`);
+      },
+    },
+  ],
+  [
+    "theme",
+    {
+      usage: "theme",
+      description: "choose a theme",
+      run(args, shell) {
+        if (args.length > 0) shell.error(`theme: too many arguments ${ARGOT_TIP}`);
+        else shell.pickTheme();
       },
     },
   ],
