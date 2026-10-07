@@ -15,7 +15,7 @@ _Avoid_: User. Also don't use it for the thing moved on the board (that's the **
 ## Home
 
 **Home**:
-The screen a visitor lands on, with the logo, the prompt and the output of the last command. The first command shrinks the logo to the top; Esc takes home back to how it first looked.
+The screen a visitor lands on, with the logo, the prompt and the output of the last command. Every command but `theme`, whose picker opens over home as it is, shrinks the logo to the top; Esc takes home back to how it first looked.
 _Avoid_: Landing, main menu, terminal
 
 **Prompt**:

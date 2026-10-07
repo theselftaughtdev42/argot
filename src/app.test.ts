@@ -371,13 +371,42 @@ describe("home logo", () => {
     expect(isCompact(root)).toBe(false);
   });
 
-  it("stays full size after launching and quitting a drill from a fresh home", () => {
+  it("is compact, with nothing under it, after launching and quitting a drill from a fresh home", () => {
     const root = load();
     run("vim hjkl");
     press("Escape");
     run(":q!");
     expect(screenOf(root)).toBe("home");
+    expect(isCompact(root)).toBe(true);
+    expect(root.querySelector(".ag-ls, .ag-error, .ag-commands")).toBeNull();
+  });
+
+  it("stays full size, with the tagline, while theme's picker is open and after it closes", () => {
+    const root = load();
+    run("theme");
     expect(isCompact(root)).toBe(false);
+    expect(root.querySelector(".ag-tagline")).not.toBeNull();
+    press("Enter");
+    expect(isCompact(root)).toBe(false);
+    run("theme");
+    press("Escape");
+    expect(isCompact(root)).toBe(false);
+  });
+
+  it("keeps the last response showing under theme's picker", () => {
+    const root = load();
+    run("ls");
+    run("theme");
+    expect(isCompact(root)).toBe(true);
+    expect([...root.querySelectorAll(".ag-ls li")].map((li) => li.textContent)).toEqual(["hjkl", "wb", "rel-jk"]);
+    press("Escape");
+    expect(root.querySelector(".ag-ls")).not.toBeNull();
+  });
+
+  it("becomes compact after theme with an argument, which is an error", () => {
+    const root = load();
+    run("theme dusk");
+    expect(isCompact(root)).toBe(true);
   });
 
   it("stays compact for the visit, through empty Enters and a drill", () => {
