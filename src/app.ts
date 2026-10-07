@@ -161,7 +161,8 @@ export function mountApp(root: HTMLElement): void {
       home.last = null;
       return;
     }
-    const show = (output: ShellOutput) => (home.last = { name, output });
+    let output = null as ShellOutput | null;
+    const show = (shown: ShellOutput) => (output = shown);
     const shell: Shell = {
       list: (items) => show({ kind: "list", items }),
       error: (text) => show({ kind: "error", text }),
@@ -169,12 +170,13 @@ export function mountApp(root: HTMLElement): void {
       launchDrill,
       pickTheme: openThemePicker,
     };
-    // Cleared first so a drill launch leaves a clean home to come back to.
-    home.last = null;
     const command = findCommand(homeCommands, name);
     if (command) command.run(args, shell);
     else shell.error(`${name}: command not found ${ARGOT_TIP}`);
-    if (drill) return;
+    // The theme picker opens over home as it was, so the theme shows on it.
+    if (home.picker) return;
+    // A drill launch shows nothing, leaving a clean home to come back to.
+    home.last = output && { name, output };
     // Once the visitor has run a command, its output matters more than the logo.
     home.compact = true;
   }
